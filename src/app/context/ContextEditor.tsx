@@ -240,6 +240,62 @@ function buildMarkdown(f: ContextForm): string {
   return parts.join("\n").trim();
 }
 
+// ─── Example contexts ─────────────────────────────────────────────────────
+// Characters from Two Guys, a Girl and a Pizza Place
+
+const EXAMPLES: Record<Mode, ContextForm> = {
+  business: {
+    name: "Michael Bergen",
+    role: "Founder & Principal Architect",
+    organization: "Berg Architecture Studio",
+    whatBuilding:
+      "A boutique architecture firm in Boston specializing in residential renovations and quirky commercial spaces. Two years in, running lean — it's Berg plus one drafting intern. Most work comes through word-of-mouth, which is good for quality and terrible for predictability. The portfolio is strong but not published anywhere.",
+    revenueModel:
+      "Project-based billing for residential and light commercial work. Average project runs $15–40k. Currently managing 4 active projects simultaneously, which is about 1 too many.",
+    whatGoodLooks:
+      "In 2 years, Berg Architecture Studio is the go-to firm for Boston homeowners who want something genuinely different — creative, livable, a little unexpected. Revenue above $500k, a team of 3–4, and at least one project that gets published in a real design outlet.",
+    whatToAvoid:
+      "Becoming a draftsman for developers\nTaking clients who want generic output at scale\nGrowing so fast Berg stops being the creative force on every project\nSaying yes to Providence commuter work just because it pays",
+    strategicThemes:
+      "Land a commercial project with cultural cachet (restaurant, boutique, community space)\nGet the first feature in a design publication\nHire a second architect who can own project management",
+    strategicQuestions:
+      "Should we niche into a specific style or stay versatile?\nHow do I get off the referral-only treadmill?\nIs there a play beyond buildings — furniture, interiors, product?",
+  },
+  project: {
+    name: "Sharon Carter",
+    role: "Operations Lead",
+    organization: "Beacon Street Pizza — Allston Expansion",
+    whatBuilding:
+      "Opening a second Beacon Street Pizza location in Allston. The original Back Bay spot has been profitable for 3 years. This is a 6-month build-out with a target soft launch in March. Sharon is managing the entire project alongside her day job running the original location, which is already a lot.",
+    revenueModel:
+      "$120k in owner financing. 6-month window before lease acceleration kicks in. One external contractor for the fit-out, Sharon handling everything else. No dedicated project budget for mistakes.",
+    whatGoodLooks:
+      "Allston location opens on time, hits break-even within 90 days, and the original location's operations don't suffer while Sharon is stretched across both. Bonus: we hire a GM who actually stays.",
+    whatToAvoid:
+      "Over-customizing the menu for Allston and losing what makes Beacon Street Pizza work\nHiring too fast before we know actual staffing needs\nLetting Pete or Berg get involved in any decisions\nPerfectionism on the fit-out that eats the timeline",
+    strategicThemes:
+      "Finalize the fit-out contractor this month\nBuild the GM job description and start recruiting\nDraft soft-launch marketing plan for the Allston neighborhood",
+    strategicQuestions:
+      "Do we replicate the original menu exactly or adjust for the Allston demographic?\nShould we hire the GM before or after the space is done?\nHow do we keep Back Bay regulars from drifting to the new location?",
+  },
+  personal: {
+    name: "Pete Dunville",
+    role: "Pre-med student",
+    organization: "3rd year, Boston University — figuring out what comes next",
+    whatBuilding:
+      "Pete is at a genuine decision point. Med school applications are open and his grades qualify him for programs across the country. Ashley expects him to apply to Boston-area schools. His dad in Providence assumes he'll come home after graduation. And honestly, Pete isn't 100% sure medicine is still what he wants — he just hasn't said it out loud to anyone, including himself.",
+    revenueModel: "",
+    whatGoodLooks:
+      "By December, Pete has made a real decision about med school — one he can stand behind, not just the path of least resistance. Whatever he chooses, it's something he chose on purpose, not something that happened to him.",
+    whatToAvoid:
+      "Applying to schools just to keep Ashley comfortable\nGoing back to Providence to work in his dad's furniture store\nPretending certainty he doesn't have\nMaking a $200k decision based on not wanting an awkward conversation",
+    strategicThemes:
+      "Have an honest conversation with Ashley about what I actually want\nFigure out if the doubt I'm feeling is signal or noise\nGet clearer on what I'd do if I weren't afraid of disappointing people",
+    strategicQuestions:
+      "Am I running toward medicine or just haven't said no yet?\nWhat do I actually owe Ashley at this stage?\nIf I could do anything — and Bill Dunville didn't exist — what would it be?",
+  },
+};
+
 // ─── Sub-components ────────────────────────────────────────────────────────
 
 const inputClass =
@@ -289,10 +345,18 @@ function StatusPill({ status }: { status: SaveStatus }) {
 function ModeSelector({
   mode,
   onChange,
+  onLoadExample,
 }: {
   mode: Mode;
   onChange: (m: Mode) => void;
+  onLoadExample: () => void;
 }) {
+  const exampleNames: Record<Mode, string> = {
+    business: "Berg's architecture firm",
+    project: "Sharon's pizza expansion",
+    personal: "Pete's med school dilemma",
+  };
+
   return (
     <div className="pb-6">
       <div className="flex gap-2 flex-wrap">
@@ -311,7 +375,16 @@ function ModeSelector({
           </button>
         ))}
       </div>
-      <p className="text-xs text-white/30 mt-2.5">{MODES[mode].description}</p>
+      <div className="flex items-center justify-between gap-4 mt-2.5">
+        <p className="text-xs text-white/30">{MODES[mode].description}</p>
+        <button
+          type="button"
+          onClick={onLoadExample}
+          className="text-xs text-new-leaf/70 hover:text-new-leaf transition-colors whitespace-nowrap flex-shrink-0"
+        >
+          Try: {exampleNames[mode]} →
+        </button>
+      </div>
       <div className="border-t border-white/5 mt-6" />
     </div>
   );
@@ -387,6 +460,14 @@ export default function ContextEditor({ initial }: { initial: string }) {
     [form, doSave]
   );
 
+  const handleLoadExample = useCallback(() => {
+    const example = EXAMPLES[mode];
+    setForm(example);
+    setStatus("dirty");
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => doSave(example), 1500);
+  }, [mode, doSave]);
+
   const cfg = MODES[mode];
 
   return (
@@ -407,7 +488,7 @@ export default function ContextEditor({ initial }: { initial: string }) {
       </div>
 
       <div className="card p-6 sm:p-8">
-        <ModeSelector mode={mode} onChange={handleModeChange} />
+        <ModeSelector mode={mode} onChange={handleModeChange} onLoadExample={handleLoadExample} />
 
         <form onSubmit={handleSave} className="space-y-6">
 
