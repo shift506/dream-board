@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { getAllDecisions } from "@/lib/decisions";
 import { getAllAdvisors, ALL_BOARDS } from "@/lib/advisors";

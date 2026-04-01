@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 interface ContextForm {
   name: string;
@@ -637,6 +638,20 @@ export default function ContextEditor({ initial }: { initial: string }) {
           </button>
 
         </form>
+      </div>
+
+      <div className="card p-5 border-new-leaf/20 bg-new-leaf/5">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-sm font-medium text-white">Ready to convene?</p>
+            <p className="text-xs text-white/45 mt-0.5">
+              Your advisors have everything they need. Bring them a question.
+            </p>
+          </div>
+          <Link href="/boardroom" className="btn-primary whitespace-nowrap flex-shrink-0">
+            Open Boardroom →
+          </Link>
+        </div>
       </div>
     </div>
   );
