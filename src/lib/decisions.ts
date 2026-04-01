@@ -30,53 +30,78 @@ export interface Decision {
   files: { name: string; content: string }[];
 }
 
-export function getAllDecisions(): Decision[] {
+function blobAvailable() {
+  return !!process.env.BLOB_READ_WRITE_TOKEN;
+}
+
+function slugToTitle(slug: string) {
+  return slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+}
+
+// ── Read all decisions ──────────────────────────────────────────────────────
+
+export async function getAllDecisions(): Promise<Decision[]> {
+  if (blobAvailable()) {
+    try {
+      const { list } = await import("@vercel/blob");
+      const { blobs } = await list({ prefix: "sessions/" });
+      const jsonBlobs = blobs.filter((b) => b.pathname.endsWith(".json"));
+      const sessions = await Promise.all(
+        jsonBlobs.map(async (b) => {
+          try {
+            const res = await fetch(b.url, { cache: "no-store" });
+            const data = (await res.json()) as SessionData;
+            const slug = b.pathname.replace("sessions/", "").replace(".json", "");
+            return {
+              slug,
+              title: slugToTitle(slug),
+              date: data.date,
+              question: data.question,
+              files: [{ name: "session.json", content: "" }],
+            } as Decision;
+          } catch {
+            return null;
+          }
+        })
+      );
+      return sessions
+        .filter((d): d is Decision => d !== null)
+        .sort((a, b) => (a.date < b.date ? 1 : -1));
+    } catch {}
+  }
+  return getAllDecisionsFromFs();
+}
+
+function getAllDecisionsFromFs(): Decision[] {
   const decisionsDir = path.join(DATA_ROOT, "decisions");
   if (!fs.existsSync(decisionsDir)) return [];
-
   const slugs = fs
     .readdirSync(decisionsDir, { withFileTypes: true })
     .filter((d) => d.isDirectory())
     .map((d) => d.name);
-
   return slugs
-    .map((slug) => readDecision(slug))
+    .map((slug) => readDecisionFromFs(slug))
     .filter((d): d is Decision => d !== null)
     .sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 
-export function readDecision(slug: string): Decision | null {
-  const dir = path.join(DATA_ROOT, "decisions", slug);
-  if (!fs.existsSync(dir)) return null;
+// ── Read one session ────────────────────────────────────────────────────────
 
-  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md"));
-  if (files.length === 0) return null;
-
-  const fileContents = files.map((f) => ({
-    name: f,
-    content: fs.readFileSync(path.join(dir, f), "utf-8"),
-  }));
-
-  // Try to extract date + question from the first file
-  const primary = fileContents[0].content;
-  const dateMatch = primary.match(/\*\*Date:\*\*\s*(.+)/);
-  const questionMatch = primary.match(/\*\*Question:\*\*\s*(.+)/);
-
-  const title = slug
-    .split("-")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
-
-  return {
-    slug,
-    title,
-    date: dateMatch?.[1]?.trim() ?? "",
-    question: questionMatch?.[1]?.trim() ?? title,
-    files: fileContents,
-  };
+export async function readSessionData(slug: string): Promise<SessionData | null> {
+  if (blobAvailable()) {
+    try {
+      const { list } = await import("@vercel/blob");
+      const { blobs } = await list({ prefix: `sessions/${slug}.json` });
+      if (blobs.length > 0) {
+        const res = await fetch(blobs[0].url, { cache: "no-store" });
+        return (await res.json()) as SessionData;
+      }
+    } catch {}
+  }
+  return readSessionDataFromFs(slug);
 }
 
-export function readSessionData(slug: string): SessionData | null {
+function readSessionDataFromFs(slug: string): SessionData | null {
   const jsonPath = path.join(DATA_ROOT, "decisions", slug, "session.json");
   if (!fs.existsSync(jsonPath)) return null;
   try {
@@ -86,8 +111,59 @@ export function readSessionData(slug: string): SessionData | null {
   }
 }
 
-export function writeDecisionFile(slug: string, filename: string, content: string): void {
+// ── Read decision (markdown fallback) ──────────────────────────────────────
+
+export function readDecision(slug: string): Decision | null {
+  return readDecisionFromFs(slug);
+}
+
+function readDecisionFromFs(slug: string): Decision | null {
+  const dir = path.join(DATA_ROOT, "decisions", slug);
+  if (!fs.existsSync(dir)) return null;
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md"));
+  if (files.length === 0) return null;
+  const fileContents = files.map((f) => ({
+    name: f,
+    content: fs.readFileSync(path.join(dir, f), "utf-8"),
+  }));
+  const primary = fileContents[0].content;
+  const dateMatch = primary.match(/\*\*Date:\*\*\s*(.+)/);
+  const questionMatch = primary.match(/\*\*Question:\*\*\s*(.+)/);
+  return {
+    slug,
+    title: slugToTitle(slug),
+    date: dateMatch?.[1]?.trim() ?? "",
+    question: questionMatch?.[1]?.trim() ?? slugToTitle(slug),
+    files: fileContents,
+  };
+}
+
+// ── Write session ───────────────────────────────────────────────────────────
+
+export async function writeSession(
+  slug: string,
+  session: SessionData,
+  markdown: string
+): Promise<void> {
+  if (blobAvailable()) {
+    const { put } = await import("@vercel/blob");
+    await Promise.all([
+      put(`sessions/${slug}.json`, JSON.stringify(session, null, 2), {
+        access: "public",
+        addRandomSuffix: false,
+        contentType: "application/json",
+      }),
+      put(`sessions/${slug}.md`, markdown, {
+        access: "public",
+        addRandomSuffix: false,
+        contentType: "text/plain",
+      }),
+    ]);
+    return;
+  }
+  // Local filesystem fallback
   const dir = path.join(DATA_ROOT, "decisions", slug);
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, filename), content, "utf-8");
+  fs.writeFileSync(path.join(dir, "session.json"), JSON.stringify(session, null, 2), "utf-8");
+  fs.writeFileSync(path.join(dir, "session.md"), markdown, "utf-8");
 }

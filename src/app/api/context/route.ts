@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
-
-const CONTEXT_PATH = path.join(process.cwd(), "context.md");
+import { getBusinessContext, setBusinessContext } from "@/lib/context";
 
 export async function GET() {
-  const content = fs.existsSync(CONTEXT_PATH)
-    ? fs.readFileSync(CONTEXT_PATH, "utf-8")
-    : "";
+  const content = await getBusinessContext();
   return NextResponse.json({ content });
 }
 
@@ -16,6 +11,6 @@ export async function PUT(req: NextRequest) {
   if (typeof content !== "string") {
     return NextResponse.json({ error: "Invalid content." }, { status: 400 });
   }
-  fs.writeFileSync(CONTEXT_PATH, content, "utf-8");
+  await setBusinessContext(content);
   return NextResponse.json({ ok: true });
 }

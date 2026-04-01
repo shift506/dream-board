@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getAdvisor } from "@/lib/advisors";
 import { getBusinessContext } from "@/lib/context";
-import { writeDecisionFile } from "@/lib/decisions";
+import { writeSession } from "@/lib/decisions";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     return new Response("Missing question or advisors", { status: 400 });
   }
 
-  const context = getBusinessContext();
+  const context = await getBusinessContext();
 
   const supportingMaterials =
     documents.length > 0
@@ -330,9 +330,7 @@ Write this as a neutral facilitator. Surface the tension; don't flatten it.`}`;
         synthesisText,
       ].join("\n");
 
-      writeDecisionFile(slug, "session.md", sessionMd);
-
-      const sessionJson = {
+      const sessionData = {
         question,
         date: now,
         mode,
@@ -347,7 +345,7 @@ Write this as a neutral facilitator. Surface the tension; don't flatten it.`}`;
         synthesis: synthesisText,
         tension: tensionJson,
       };
-      writeDecisionFile(slug, "session.json", JSON.stringify(sessionJson, null, 2));
+      await writeSession(slug, sessionData, sessionMd);
 
       send({ type: "done", slug, synthesisText });
       controller.close();

@@ -1,8 +1,10 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { getAllDecisions } from "@/lib/decisions";
 
-export default function DecisionsPage() {
-  const decisions = getAllDecisions();
+export default async function DecisionsPage() {
+  const decisions = await getAllDecisions();
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -23,7 +25,7 @@ export default function DecisionsPage() {
       </div>
 
       {decisions.length === 0 ? (
-        <div className="card p-12 text-center">
+        <div className="card p-6 sm:p-12 text-center">
           <p className="text-white/40">No sessions yet.</p>
           <Link href="/boardroom" className="text-new-leaf hover:text-new-leaf/70 text-sm mt-2 inline-block transition-colors">
             Convene your first session →
@@ -42,14 +44,9 @@ export default function DecisionsPage() {
                   <h2 className="font-semibold text-white text-base leading-snug">
                     {d.question || d.title}
                   </h2>
-                  <div className="flex items-center gap-3 mt-2">
-                    {d.date && (
-                      <span className="text-xs text-white/35">{d.date}</span>
-                    )}
-                    <span className="text-xs text-white/25">
-                      {d.files.length} file{d.files.length !== 1 ? "s" : ""}
-                    </span>
-                  </div>
+                  {d.date && (
+                    <span className="text-xs text-white/35 mt-2 block">{d.date}</span>
+                  )}
                 </div>
                 <span className="text-white/30 text-sm flex-shrink-0">→</span>
               </div>

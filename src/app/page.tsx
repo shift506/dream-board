@@ -8,10 +8,9 @@ function extractContextSummary(raw: string): string {
   return lines.slice(0, 3).join(" ").slice(0, 300) + "…";
 }
 
-export default function DashboardPage() {
-  const decisions = getAllDecisions();
+export default async function DashboardPage() {
+  const [decisions, context] = await Promise.all([getAllDecisions(), getBusinessContext()]);
   const advisors = getAllAdvisors();
-  const context = getBusinessContext();
   const recentDecisions = decisions.slice(0, 3);
 
   const boardCounts = ALL_BOARDS.map((board) => ({

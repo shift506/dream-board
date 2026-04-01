@@ -1,25 +1,20 @@
+export const dynamic = "force-dynamic";
+
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { readDecision, readSessionData, getAllDecisions } from "@/lib/decisions";
+import { readDecision, readSessionData } from "@/lib/decisions";
 import DecisionClient from "./DecisionClient";
-
-export function generateStaticParams() {
-  const decisions = getAllDecisions();
-  return decisions.map((d) => ({ slug: d.slug }));
-}
 
 export default async function DecisionPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  // Try structured session data first (new sessions)
-  const session = readSessionData(slug);
+  const session = await readSessionData(slug);
   if (session) {
     return <DecisionClient session={session} />;
   }
 
-  // Fall back to markdown rendering for older sessions
   const decision = readDecision(slug);
   if (!decision) notFound();
 
@@ -56,12 +51,8 @@ export default async function DecisionPage({ params }: { params: Promise<{ slug:
       ))}
 
       <div className="flex items-center gap-4 pt-2">
-        <Link href="/decisions" className="btn-secondary">
-          ← Archive
-        </Link>
-        <Link href="/boardroom" className="btn-primary">
-          New Session →
-        </Link>
+        <Link href="/decisions" className="btn-secondary">← Archive</Link>
+        <Link href="/boardroom" className="btn-primary">New Session →</Link>
       </div>
     </div>
   );
