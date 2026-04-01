@@ -11,7 +11,7 @@ export async function getBusinessContext(): Promise<string> {
       const { list } = await import("@vercel/blob");
       const { blobs } = await list({ prefix: "context.md" });
       if (blobs.length > 0) {
-        const res = await fetch(blobs[0].url, { cache: "no-store" });
+        const res = await fetch(blobs[0].downloadUrl, { cache: "no-store" });
         return res.text();
       }
     } catch {}
@@ -25,7 +25,7 @@ export async function setBusinessContext(content: string): Promise<void> {
   if (blobAvailable()) {
     const { put } = await import("@vercel/blob");
     await put("context.md", content, {
-      access: "public",
+      access: "private",
       addRandomSuffix: false,
       contentType: "text/plain",
     });

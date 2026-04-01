@@ -109,7 +109,7 @@ export async function getAllAdvisors(): Promise<Advisor[]> {
       for (const blob of blobs) {
         const slug = blob.pathname.replace("advisors/", "").replace(".md", "");
         if (!fsAdvisors.has(slug)) {
-          const res = await fetch(blob.url, { cache: "no-store" });
+          const res = await fetch(blob.downloadUrl, { cache: "no-store" });
           const content = await res.text();
           fsAdvisors.set(slug, buildAdvisorFromContent(slug, content));
         }
@@ -134,7 +134,7 @@ export async function getAdvisor(slug: string): Promise<Advisor | null> {
       const { list } = await import("@vercel/blob");
       const { blobs } = await list({ prefix: `advisors/${slug}.md` });
       if (blobs.length > 0) {
-        const res = await fetch(blobs[0].url, { cache: "no-store" });
+        const res = await fetch(blobs[0].downloadUrl, { cache: "no-store" });
         const content = await res.text();
         return buildAdvisorFromContent(slug, content);
       }

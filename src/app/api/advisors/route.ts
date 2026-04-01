@@ -68,7 +68,7 @@ ${toList(challenges)}
       return NextResponse.json({ error: "An advisor with this name already exists." }, { status: 409 });
     }
     await put(`advisors/${slug}.md`, markdown, {
-      access: "public",
+      access: "private",
       addRandomSuffix: false,
       contentType: "text/plain",
     });

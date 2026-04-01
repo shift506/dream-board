@@ -49,7 +49,7 @@ export async function getAllDecisions(): Promise<Decision[]> {
       const sessions = await Promise.all(
         jsonBlobs.map(async (b) => {
           try {
-            const res = await fetch(b.url, { cache: "no-store" });
+            const res = await fetch(b.downloadUrl, { cache: "no-store" });
             const data = (await res.json()) as SessionData;
             const slug = b.pathname.replace("sessions/", "").replace(".json", "");
             return {
@@ -93,7 +93,7 @@ export async function readSessionData(slug: string): Promise<SessionData | null>
       const { list } = await import("@vercel/blob");
       const { blobs } = await list({ prefix: `sessions/${slug}.json` });
       if (blobs.length > 0) {
-        const res = await fetch(blobs[0].url, { cache: "no-store" });
+        const res = await fetch(blobs[0].downloadUrl, { cache: "no-store" });
         return (await res.json()) as SessionData;
       }
     } catch {}
@@ -149,12 +149,12 @@ export async function writeSession(
     const { put } = await import("@vercel/blob");
     await Promise.all([
       put(`sessions/${slug}.json`, JSON.stringify(session, null, 2), {
-        access: "public",
+        access: "private",
         addRandomSuffix: false,
         contentType: "application/json",
       }),
       put(`sessions/${slug}.md`, markdown, {
-        access: "public",
+        access: "private",
         addRandomSuffix: false,
         contentType: "text/plain",
       }),
