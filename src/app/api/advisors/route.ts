@@ -70,6 +70,7 @@ ${toList(challenges)}
     await put(`advisors/${slug}.md`, markdown, {
       access: "private",
       addRandomSuffix: false,
+      allowOverwrite: false,
       contentType: "text/plain",
     });
   } else {

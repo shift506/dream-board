@@ -151,11 +151,13 @@ export async function writeSession(
       put(`sessions/${slug}.json`, JSON.stringify(session, null, 2), {
         access: "private",
         addRandomSuffix: false,
+        allowOverwrite: true,
         contentType: "application/json",
       }),
       put(`sessions/${slug}.md`, markdown, {
         access: "private",
         addRandomSuffix: false,
+        allowOverwrite: true,
         contentType: "text/plain",
       }),
     ]);

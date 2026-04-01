@@ -27,6 +27,7 @@ export async function setBusinessContext(content: string): Promise<void> {
     await put("context.md", content, {
       access: "private",
       addRandomSuffix: false,
+      allowOverwrite: true,
       contentType: "text/plain",
     });
     return;
