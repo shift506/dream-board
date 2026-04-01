@@ -16,6 +16,7 @@ interface ContextForm {
 }
 
 type SaveStatus = "clean" | "dirty" | "saving" | "saved" | "error";
+type SaveError = string | null;
 type Mode = "business" | "project" | "personal";
 
 // ─── Mode configuration ────────────────────────────────────────────────────
@@ -395,6 +396,7 @@ function ModeSelector({
 export default function ContextEditor({ initial }: { initial: string }) {
   const [form, setForm] = useState<ContextForm>(() => parseContext(initial));
   const [status, setStatus] = useState<SaveStatus>("clean");
+  const [saveError, setSaveError] = useState<SaveError>(null);
   const [mode, setMode] = useState<Mode>("business");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
@@ -415,17 +417,23 @@ export default function ContextEditor({ initial }: { initial: string }) {
   const doSave = useCallback(
     async (f: ContextForm) => {
       setStatus("saving");
+      setSaveError(null);
       try {
         const res = await fetch("/api/context", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content: buildMarkdown(f) }),
         });
-        if (!res.ok) throw new Error();
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || `HTTP ${res.status}`);
+        }
         setStatus("saved");
         router.refresh();
         setTimeout(() => setStatus("clean"), 2000);
-      } catch {
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        setSaveError(msg);
         setStatus("error");
       }
     },
@@ -615,7 +623,9 @@ export default function ContextEditor({ initial }: { initial: string }) {
           </div>
 
           {status === "error" && (
-            <p className="text-xs text-blossom">Failed to save. Try again.</p>
+            <p className="text-xs text-blossom">
+              Failed to save{saveError ? `: ${saveError}` : ""}. Try again.
+            </p>
           )}
 
           <button

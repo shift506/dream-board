@@ -11,6 +11,12 @@ export async function PUT(req: NextRequest) {
   if (typeof content !== "string") {
     return NextResponse.json({ error: "Invalid content." }, { status: 400 });
   }
-  await setBusinessContext(content);
-  return NextResponse.json({ ok: true });
+  try {
+    await setBusinessContext(content);
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[context PUT]", message);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
