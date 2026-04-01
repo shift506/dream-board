@@ -35,6 +35,10 @@ const BOARD_ROSTER: Record<string, { focus: string; boards: string[] }> = {
   "everett-rogers": { focus: "Adoption Dynamics", boards: ["Systems Change"] },
   "marshall-ganz": { focus: "Movement Building", boards: ["Systems Change", "Personal"] },
   "henry-mintzberg": { focus: "Organizational Reality", boards: ["Systems Change"] },
+  "andrew-bedford": { focus: "Narrative & Leadership", boards: ["Marketing", "Personal"] },
+  "nick-scott": { focus: "Narrative & Leadership", boards: ["Systems Change", "Personal"] },
+  "clayton-christensen": { focus: "Disruptive Innovation", boards: ["Strategy & Direction", "Revenue & Business Model"] },
+  "adrienne-maree-brown": { focus: "Movement Building", boards: ["Strategy & Direction", "Systems Change"] },
 };
 
 export const ALL_BOARDS = [
@@ -45,6 +49,10 @@ export const ALL_BOARDS = [
   "Systems Change",
   "Personal",
 ];
+
+function blobAvailable() {
+  return !!process.env.BLOB_READ_WRITE_TOKEN;
+}
 
 // Parse name, focus, and boards from markdown for advisors not in BOARD_ROSTER
 function parseMarkdownMeta(slug: string, content: string): { name: string; focus: string; boards: string[] } {
@@ -73,27 +81,7 @@ function parseMarkdownMeta(slug: string, content: string): { name: string; focus
   return { name, focus, boards };
 }
 
-export function getAllAdvisors(): Advisor[] {
-  const advisorsDir = path.join(DATA_ROOT, "advisors");
-  const files = fs.readdirSync(advisorsDir).filter((f) => f.endsWith(".md"));
-
-  return files.map((file) => {
-    const slug = file.replace(".md", "");
-    const content = fs.readFileSync(path.join(advisorsDir, file), "utf-8");
-    if (BOARD_ROSTER[slug]) {
-      const meta = BOARD_ROSTER[slug];
-      const name = slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-      return { slug, name, focus: meta.focus, boards: meta.boards, content };
-    }
-    const { name, focus, boards } = parseMarkdownMeta(slug, content);
-    return { slug, name, focus, boards, content };
-  });
-}
-
-export function getAdvisor(slug: string): Advisor | null {
-  const filePath = path.join(DATA_ROOT, "advisors", `${slug}.md`);
-  if (!fs.existsSync(filePath)) return null;
-  const content = fs.readFileSync(filePath, "utf-8");
+function buildAdvisorFromContent(slug: string, content: string): Advisor {
   if (BOARD_ROSTER[slug]) {
     const meta = BOARD_ROSTER[slug];
     const name = slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
@@ -103,6 +91,62 @@ export function getAdvisor(slug: string): Advisor | null {
   return { slug, name, focus, boards, content };
 }
 
-export function getAdvisorsByBoard(board: string): Advisor[] {
-  return getAllAdvisors().filter((a) => a.boards.includes(board));
+export async function getAllAdvisors(): Promise<Advisor[]> {
+  const advisorsDir = path.join(DATA_ROOT, "advisors");
+  const files = fs.readdirSync(advisorsDir).filter((f) => f.endsWith(".md"));
+  const fsAdvisors = new Map<string, Advisor>();
+
+  for (const file of files) {
+    const slug = file.replace(".md", "");
+    const content = fs.readFileSync(path.join(advisorsDir, file), "utf-8");
+    fsAdvisors.set(slug, buildAdvisorFromContent(slug, content));
+  }
+
+  if (blobAvailable()) {
+    try {
+      const { list } = await import("@vercel/blob");
+      const { blobs } = await list({ prefix: "advisors/" });
+      for (const blob of blobs) {
+        const slug = blob.pathname.replace("advisors/", "").replace(".md", "");
+        if (!fsAdvisors.has(slug)) {
+          const res = await fetch(blob.url, { cache: "no-store" });
+          const content = await res.text();
+          fsAdvisors.set(slug, buildAdvisorFromContent(slug, content));
+        }
+      }
+    } catch {
+      // Non-critical — use filesystem advisors only
+    }
+  }
+
+  return Array.from(fsAdvisors.values());
+}
+
+export async function getAdvisor(slug: string): Promise<Advisor | null> {
+  const filePath = path.join(DATA_ROOT, "advisors", `${slug}.md`);
+  if (fs.existsSync(filePath)) {
+    const content = fs.readFileSync(filePath, "utf-8");
+    return buildAdvisorFromContent(slug, content);
+  }
+
+  if (blobAvailable()) {
+    try {
+      const { list } = await import("@vercel/blob");
+      const { blobs } = await list({ prefix: `advisors/${slug}.md` });
+      if (blobs.length > 0) {
+        const res = await fetch(blobs[0].url, { cache: "no-store" });
+        const content = await res.text();
+        return buildAdvisorFromContent(slug, content);
+      }
+    } catch {
+      // Not found
+    }
+  }
+
+  return null;
+}
+
+export async function getAdvisorsByBoard(board: string): Promise<Advisor[]> {
+  const all = await getAllAdvisors();
+  return all.filter((a) => a.boards.includes(board));
 }

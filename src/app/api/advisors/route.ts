@@ -4,6 +4,10 @@ import path from "path";
 
 const ADVISORS_DIR = path.join(process.cwd(), "advisors");
 
+function blobAvailable() {
+  return !!process.env.BLOB_READ_WRITE_TOKEN;
+}
+
 export async function POST(req: NextRequest) {
   const { name, focus, boards, whoYouAre, howYouThink, biases, voice, challenges } =
     (await req.json()) as {
@@ -26,11 +30,6 @@ export async function POST(req: NextRequest) {
     .replace(/[^a-z0-9\s-]/g, "")
     .trim()
     .replace(/\s+/g, "-");
-
-  const filePath = path.join(ADVISORS_DIR, `${slug}.md`);
-  if (fs.existsSync(filePath)) {
-    return NextResponse.json({ error: "An advisor with this name already exists." }, { status: 409 });
-  }
 
   const toList = (text: string) =>
     text
@@ -62,6 +61,24 @@ ${toList(voice)}
 ${toList(challenges)}
 `;
 
-  fs.writeFileSync(filePath, markdown, "utf-8");
+  if (blobAvailable()) {
+    const { list, put } = await import("@vercel/blob");
+    const { blobs } = await list({ prefix: `advisors/${slug}.md` });
+    if (blobs.length > 0) {
+      return NextResponse.json({ error: "An advisor with this name already exists." }, { status: 409 });
+    }
+    await put(`advisors/${slug}.md`, markdown, {
+      access: "public",
+      addRandomSuffix: false,
+      contentType: "text/plain",
+    });
+  } else {
+    const filePath = path.join(ADVISORS_DIR, `${slug}.md`);
+    if (fs.existsSync(filePath)) {
+      return NextResponse.json({ error: "An advisor with this name already exists." }, { status: 409 });
+    }
+    fs.writeFileSync(filePath, markdown, "utf-8");
+  }
+
   return NextResponse.json({ slug, name });
 }

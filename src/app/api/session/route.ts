@@ -29,9 +29,9 @@ export async function POST(req: NextRequest) {
           .map((d) => `### ${d.name}\n\n${d.content}`)
           .join("\n\n---\n\n")}`
       : "";
-  const advisors = advisorSlugs
-    .map((s) => getAdvisor(s))
-    .filter((a): a is NonNullable<typeof a> => a !== null);
+  const advisors = (await Promise.all(advisorSlugs.map((s) => getAdvisor(s)))).filter(
+    (a): a is NonNullable<typeof a> => a !== null
+  );
 
   const encoder = new TextEncoder();
 
