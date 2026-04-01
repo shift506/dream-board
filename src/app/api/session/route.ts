@@ -192,7 +192,7 @@ Be direct. Name the other advisors when you push back.`}`;
         .map((a) => `### ${a.name} — Rebuttal\n${round2Memos[a.slug] ?? ""}`)
         .join("\n\n---\n\n");
 
-      let tensionJson: object | null = null;
+      let tensionJson: import("@/components/TensionMap").TensionData | null = null;
       try {
         const tensionPrompt = `Analyze this board session and return ONLY a JSON object. No markdown fences, no explanation — raw JSON only.
 
