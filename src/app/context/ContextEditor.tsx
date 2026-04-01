@@ -392,9 +392,41 @@ function ModeSelector({
   );
 }
 
+// ─── Board link ────────────────────────────────────────────────────────────
+
+function BoardLink({ userId }: { userId: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = () => {
+    const url = `${window.location.origin}/board/${userId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <p className="text-xs font-sub text-white/40 uppercase tracking-widest mb-1">Your Board Link</p>
+          <p className="text-xs text-white/30">Save this to return to your board from any device</p>
+        </div>
+        <button
+          type="button"
+          onClick={copy}
+          className="text-xs px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:text-white/80 hover:bg-white/10 transition-colors whitespace-nowrap flex-shrink-0"
+        >
+          {copied ? "Copied ✓" : "Copy link"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main component ────────────────────────────────────────────────────────
 
-export default function ContextEditor({ initial }: { initial: string }) {
+export default function ContextEditor({ initial, userId }: { initial: string; userId: string }) {
   const [form, setForm] = useState<ContextForm>(() => parseContext(initial));
   const [status, setStatus] = useState<SaveStatus>("clean");
   const [saveError, setSaveError] = useState<SaveError>(null);
@@ -653,6 +685,8 @@ export default function ContextEditor({ initial }: { initial: string }) {
           </Link>
         </div>
       </div>
+
+      <BoardLink userId={userId} />
     </div>
   );
 }

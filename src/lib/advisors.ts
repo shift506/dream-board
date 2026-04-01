@@ -100,26 +100,28 @@ function buildAdvisorFromContent(slug: string, content: string): Advisor {
   return { slug, name, focus, boards, content };
 }
 
-export async function getAllAdvisors(): Promise<Advisor[]> {
+export async function getAllAdvisors(userId?: string): Promise<Advisor[]> {
   const advisorsDir = path.join(DATA_ROOT, "advisors");
   const files = fs.readdirSync(advisorsDir).filter((f) => f.endsWith(".md"));
-  const fsAdvisors = new Map<string, Advisor>();
+  const advisors = new Map<string, Advisor>();
 
   for (const file of files) {
     const slug = file.replace(".md", "");
     const content = fs.readFileSync(path.join(advisorsDir, file), "utf-8");
-    fsAdvisors.set(slug, buildAdvisorFromContent(slug, content));
+    advisors.set(slug, buildAdvisorFromContent(slug, content));
   }
 
-  if (blobAvailable()) {
+  if (blobAvailable() && userId) {
     try {
       const { list } = await import("@vercel/blob");
-      const { blobs } = await list({ prefix: "advisors/" });
+      const { blobs } = await list({ prefix: `users/${userId}/advisors/` });
       for (const blob of blobs) {
-        const slug = blob.pathname.replace("advisors/", "").replace(".md", "");
-        if (!fsAdvisors.has(slug)) {
+        const slug = blob.pathname
+          .replace(`users/${userId}/advisors/`, "")
+          .replace(".md", "");
+        if (!advisors.has(slug)) {
           const content = await fetchBlob(blob.url);
-          fsAdvisors.set(slug, buildAdvisorFromContent(slug, content));
+          advisors.set(slug, buildAdvisorFromContent(slug, content));
         }
       }
     } catch {
@@ -127,20 +129,20 @@ export async function getAllAdvisors(): Promise<Advisor[]> {
     }
   }
 
-  return Array.from(fsAdvisors.values());
+  return Array.from(advisors.values());
 }
 
-export async function getAdvisor(slug: string): Promise<Advisor | null> {
+export async function getAdvisor(slug: string, userId?: string): Promise<Advisor | null> {
   const filePath = path.join(DATA_ROOT, "advisors", `${slug}.md`);
   if (fs.existsSync(filePath)) {
     const content = fs.readFileSync(filePath, "utf-8");
     return buildAdvisorFromContent(slug, content);
   }
 
-  if (blobAvailable()) {
+  if (blobAvailable() && userId) {
     try {
       const { list } = await import("@vercel/blob");
-      const { blobs } = await list({ prefix: `advisors/${slug}.md` });
+      const { blobs } = await list({ prefix: `users/${userId}/advisors/${slug}.md` });
       if (blobs.length > 0) {
         const content = await fetchBlob(blobs[0].url);
         return buildAdvisorFromContent(slug, content);
@@ -153,7 +155,7 @@ export async function getAdvisor(slug: string): Promise<Advisor | null> {
   return null;
 }
 
-export async function getAdvisorsByBoard(board: string): Promise<Advisor[]> {
-  const all = await getAllAdvisors();
+export async function getAdvisorsByBoard(board: string, userId?: string): Promise<Advisor[]> {
+  const all = await getAllAdvisors(userId);
   return all.filter((a) => a.boards.includes(board));
 }

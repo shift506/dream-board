@@ -62,12 +62,13 @@ ${toList(challenges)}
 `;
 
   if (blobAvailable()) {
+    const userId = req.cookies.get("boardroom-id")?.value ?? "anonymous";
     const { list, put } = await import("@vercel/blob");
-    const { blobs } = await list({ prefix: `advisors/${slug}.md` });
+    const { blobs } = await list({ prefix: `users/${userId}/advisors/${slug}.md` });
     if (blobs.length > 0) {
       return NextResponse.json({ error: "An advisor with this name already exists." }, { status: 409 });
     }
-    await put(`advisors/${slug}.md`, markdown, {
+    await put(`users/${userId}/advisors/${slug}.md`, markdown, {
       access: "private",
       addRandomSuffix: false,
       allowOverwrite: false,

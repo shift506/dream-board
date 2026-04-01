@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { getAllDecisions } from "@/lib/decisions";
 import { getAllAdvisors, ALL_BOARDS } from "@/lib/advisors";
@@ -11,7 +12,9 @@ function extractContextSummary(raw: string): string {
 }
 
 export default async function DashboardPage() {
-  const [decisions, context, advisors] = await Promise.all([getAllDecisions(), getBusinessContext(), getAllAdvisors()]);
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("boardroom-id")?.value ?? "anonymous";
+  const [decisions, context, advisors] = await Promise.all([getAllDecisions(userId), getBusinessContext(userId), getAllAdvisors(userId)]);
   const recentDecisions = decisions.slice(0, 3);
 
   const boardCounts = ALL_BOARDS.map((board) => ({

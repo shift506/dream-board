@@ -1,10 +1,13 @@
 export const dynamic = "force-dynamic";
 
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { getAllDecisions } from "@/lib/decisions";
 
 export default async function DecisionsPage() {
-  const decisions = await getAllDecisions();
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("boardroom-id")?.value ?? "anonymous";
+  const decisions = await getAllDecisions(userId);
 
   return (
     <div className="space-y-8 animate-fade-in">

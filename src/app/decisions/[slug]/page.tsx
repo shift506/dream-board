@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
@@ -9,8 +10,10 @@ import DecisionClient from "./DecisionClient";
 
 export default async function DecisionPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("boardroom-id")?.value ?? "anonymous";
 
-  const session = await readSessionData(slug);
+  const session = await readSessionData(slug, userId);
   if (session) {
     return <DecisionClient session={session} />;
   }

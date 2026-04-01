@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
     return new Response("Missing question or advisors", { status: 400 });
   }
 
-  const context = await getBusinessContext();
+  const userId = req.cookies.get("boardroom-id")?.value ?? "anonymous";
+  const context = await getBusinessContext(userId);
 
   const supportingMaterials =
     documents.length > 0
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
           .map((d) => `### ${d.name}\n\n${d.content}`)
           .join("\n\n---\n\n")}`
       : "";
-  const advisors = (await Promise.all(advisorSlugs.map((s) => getAdvisor(s)))).filter(
+  const advisors = (await Promise.all(advisorSlugs.map((s) => getAdvisor(s, userId)))).filter(
     (a): a is NonNullable<typeof a> => a !== null
   );
 
@@ -345,7 +346,7 @@ Write this as a neutral facilitator. Surface the tension; don't flatten it.`}`;
         synthesis: synthesisText,
         tension: tensionJson,
       };
-      await writeSession(slug, sessionData, sessionMd);
+      await writeSession(slug, sessionData, sessionMd, userId);
 
       send({ type: "done", slug, synthesisText });
       controller.close();

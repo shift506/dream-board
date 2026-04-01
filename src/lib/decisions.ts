@@ -47,18 +47,20 @@ function slugToTitle(slug: string) {
 
 // ── Read all decisions ──────────────────────────────────────────────────────
 
-export async function getAllDecisions(): Promise<Decision[]> {
+export async function getAllDecisions(userId: string): Promise<Decision[]> {
   if (blobAvailable()) {
     try {
       const { list } = await import("@vercel/blob");
-      const { blobs } = await list({ prefix: "sessions/" });
+      const { blobs } = await list({ prefix: `users/${userId}/sessions/` });
       const jsonBlobs = blobs.filter((b) => b.pathname.endsWith(".json"));
       const sessions = await Promise.all(
         jsonBlobs.map(async (b) => {
           try {
             const res = await fetchBlob(b.url);
             const data = (await res.json()) as SessionData;
-            const slug = b.pathname.replace("sessions/", "").replace(".json", "");
+            const slug = b.pathname
+              .replace(`users/${userId}/sessions/`, "")
+              .replace(".json", "");
             return {
               slug,
               title: slugToTitle(slug),
@@ -94,11 +96,11 @@ function getAllDecisionsFromFs(): Decision[] {
 
 // ── Read one session ────────────────────────────────────────────────────────
 
-export async function readSessionData(slug: string): Promise<SessionData | null> {
+export async function readSessionData(slug: string, userId: string): Promise<SessionData | null> {
   if (blobAvailable()) {
     try {
       const { list } = await import("@vercel/blob");
-      const { blobs } = await list({ prefix: `sessions/${slug}.json` });
+      const { blobs } = await list({ prefix: `users/${userId}/sessions/${slug}.json` });
       if (blobs.length > 0) {
         const res = await fetchBlob(blobs[0].url);
         return (await res.json()) as SessionData;
@@ -150,18 +152,19 @@ function readDecisionFromFs(slug: string): Decision | null {
 export async function writeSession(
   slug: string,
   session: SessionData,
-  markdown: string
+  markdown: string,
+  userId: string
 ): Promise<void> {
   if (blobAvailable()) {
     const { put } = await import("@vercel/blob");
     await Promise.all([
-      put(`sessions/${slug}.json`, JSON.stringify(session, null, 2), {
+      put(`users/${userId}/sessions/${slug}.json`, JSON.stringify(session, null, 2), {
         access: "private",
         addRandomSuffix: false,
         allowOverwrite: true,
         contentType: "application/json",
       }),
-      put(`sessions/${slug}.md`, markdown, {
+      put(`users/${userId}/sessions/${slug}.md`, markdown, {
         access: "private",
         addRandomSuffix: false,
         allowOverwrite: true,
