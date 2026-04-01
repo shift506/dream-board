@@ -54,6 +54,15 @@ function blobAvailable() {
   return !!process.env.BLOB_READ_WRITE_TOKEN;
 }
 
+async function fetchBlob(url: string): Promise<string> {
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Blob fetch failed: ${res.status}`);
+  return res.text();
+}
+
 // Parse name, focus, and boards from markdown for advisors not in BOARD_ROSTER
 function parseMarkdownMeta(slug: string, content: string): { name: string; focus: string; boards: string[] } {
   // Title line: "# Name – Focus" (em dash or regular dash)
@@ -109,8 +118,7 @@ export async function getAllAdvisors(): Promise<Advisor[]> {
       for (const blob of blobs) {
         const slug = blob.pathname.replace("advisors/", "").replace(".md", "");
         if (!fsAdvisors.has(slug)) {
-          const res = await fetch(blob.downloadUrl, { cache: "no-store" });
-          const content = await res.text();
+          const content = await fetchBlob(blob.url);
           fsAdvisors.set(slug, buildAdvisorFromContent(slug, content));
         }
       }
@@ -134,8 +142,7 @@ export async function getAdvisor(slug: string): Promise<Advisor | null> {
       const { list } = await import("@vercel/blob");
       const { blobs } = await list({ prefix: `advisors/${slug}.md` });
       if (blobs.length > 0) {
-        const res = await fetch(blobs[0].downloadUrl, { cache: "no-store" });
-        const content = await res.text();
+        const content = await fetchBlob(blobs[0].url);
         return buildAdvisorFromContent(slug, content);
       }
     } catch {

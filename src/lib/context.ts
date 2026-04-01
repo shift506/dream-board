@@ -5,14 +5,22 @@ function blobAvailable() {
   return !!process.env.BLOB_READ_WRITE_TOKEN;
 }
 
+async function fetchBlob(url: string): Promise<string> {
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Blob fetch failed: ${res.status}`);
+  return res.text();
+}
+
 export async function getBusinessContext(): Promise<string> {
   if (blobAvailable()) {
     try {
       const { list } = await import("@vercel/blob");
       const { blobs } = await list({ prefix: "context.md" });
       if (blobs.length > 0) {
-        const res = await fetch(blobs[0].downloadUrl, { cache: "no-store" });
-        return res.text();
+        return fetchBlob(blobs[0].url);
       }
     } catch {}
   }

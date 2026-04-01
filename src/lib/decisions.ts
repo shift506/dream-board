@@ -34,6 +34,13 @@ function blobAvailable() {
   return !!process.env.BLOB_READ_WRITE_TOKEN;
 }
 
+async function fetchBlob(url: string): Promise<Response> {
+  return fetch(url, {
+    headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+    cache: "no-store",
+  });
+}
+
 function slugToTitle(slug: string) {
   return slug.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 }
@@ -49,7 +56,7 @@ export async function getAllDecisions(): Promise<Decision[]> {
       const sessions = await Promise.all(
         jsonBlobs.map(async (b) => {
           try {
-            const res = await fetch(b.downloadUrl, { cache: "no-store" });
+            const res = await fetchBlob(b.url);
             const data = (await res.json()) as SessionData;
             const slug = b.pathname.replace("sessions/", "").replace(".json", "");
             return {
@@ -93,7 +100,7 @@ export async function readSessionData(slug: string): Promise<SessionData | null>
       const { list } = await import("@vercel/blob");
       const { blobs } = await list({ prefix: `sessions/${slug}.json` });
       if (blobs.length > 0) {
-        const res = await fetch(blobs[0].downloadUrl, { cache: "no-store" });
+        const res = await fetchBlob(blobs[0].url);
         return (await res.json()) as SessionData;
       }
     } catch {}
