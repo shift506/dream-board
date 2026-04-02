@@ -70,6 +70,7 @@ export default function BoardroomClient({
   const router = useRouter();
   const [question, setQuestion] = useState("");
   const [mode, setMode] = useState<Mode>("decision");
+  const [includeContext, setIncludeContext] = useState(true);
   const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set());
   const [filterBoard, setFilterBoard] = useState<string>("all");
   const [phase, setPhase] = useState<Phase>("idle");
@@ -183,7 +184,7 @@ export default function BoardroomClient({
       const res = await fetch("/api/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, advisorSlugs: Array.from(selectedSlugs), mode, documents, contextMode: localStorage.getItem("boardroom-mode") ?? "business" }),
+        body: JSON.stringify({ question, advisorSlugs: Array.from(selectedSlugs), mode, documents, contextMode: includeContext ? (localStorage.getItem("boardroom-mode") ?? "business") : "none" }),
         signal: abortRef.current.signal,
       });
 
@@ -359,6 +360,18 @@ export default function BoardroomClient({
             rows={3}
             className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/25 text-sm resize-none focus:outline-none focus:border-new-leaf/50 focus:ring-1 focus:ring-new-leaf/25 transition-colors"
           />
+
+          {/* Context toggle */}
+          <button
+            type="button"
+            onClick={() => setIncludeContext((v) => !v)}
+            className="flex items-center gap-2 text-xs text-white/40 hover:text-white/65 transition-colors pt-1"
+          >
+            <span className={`w-8 h-4 rounded-full flex items-center transition-colors flex-shrink-0 ${includeContext ? "bg-new-leaf/70" : "bg-white/15"}`}>
+              <span className={`w-3 h-3 rounded-full bg-white shadow transition-transform mx-0.5 ${includeContext ? "translate-x-4" : "translate-x-0"}`} />
+            </span>
+            {includeContext ? "Using your context" : "No context — open question"}
+          </button>
 
           {/* Supporting documents */}
           <div className="pt-1 space-y-2">

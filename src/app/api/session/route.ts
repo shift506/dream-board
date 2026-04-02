@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   }
 
   const userId = req.cookies.get("boardroom-id")?.value ?? "anonymous";
-  const context = await getBusinessContext(userId, contextMode);
+  const context = contextMode === "none" ? "" : await getBusinessContext(userId, contextMode);
 
   const supportingMaterials =
     documents.length > 0
