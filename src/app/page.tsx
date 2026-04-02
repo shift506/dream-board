@@ -66,6 +66,34 @@ export default async function DashboardPage() {
         ))}
       </div>
 
+      {/* First-run onboarding */}
+      {decisions.length === 0 && (
+        <div className="card p-6 sm:p-8 space-y-6">
+          <div>
+            <p className="text-new-leaf text-xs font-sub tracking-widest uppercase mb-2">Get started</p>
+            <h2 className="text-xl font-semibold text-white">How it works</h2>
+            <p className="text-white/45 text-sm mt-1">Three steps to your first board session.</p>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-4">
+            {[
+              { n: "1", title: "Set your context", body: "Tell your advisors who you are, what you're building, and what matters. The more specific, the better the advice.", href: "/context", cta: "Set context →" },
+              { n: "2", title: "Pick your board", body: "Choose up to 6 advisors from our roster. Mix disciplines — the tension between perspectives is where the value is.", href: "/advisors", cta: "Browse advisors →" },
+              { n: "3", title: "Ask a question", body: "Bring a real decision or topic. Get two rounds of structured debate and a Chair's synthesis.", href: "/boardroom", cta: "Open boardroom →" },
+            ].map(({ n, title, body, href, cta }) => (
+              <Link key={n} href={href} className="group block p-4 rounded-xl border border-white/8 bg-white/3 hover:bg-white/5 hover:border-white/15 transition-all">
+                <div className="w-7 h-7 rounded-full bg-new-leaf/15 border border-new-leaf/30 flex items-center justify-center text-new-leaf text-xs font-bold mb-3">{n}</div>
+                <p className="text-sm font-semibold text-white mb-1.5">{title}</p>
+                <p className="text-xs text-white/40 leading-relaxed mb-3">{body}</p>
+                <span className="text-xs text-new-leaf group-hover:text-new-leaf/70 transition-colors">{cta}</span>
+              </Link>
+            ))}
+          </div>
+          <Link href={context ? "/boardroom" : "/context"} className="btn-primary inline-block">
+            {context ? "Boardroom →" : "Start with context →"}
+          </Link>
+        </div>
+      )}
+
       <div className="grid sm:grid-cols-2 gap-8">
         {/* Recent decisions */}
         <div>

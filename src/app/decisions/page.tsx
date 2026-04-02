@@ -28,11 +28,31 @@ export default async function DecisionsPage() {
       </div>
 
       {decisions.length === 0 ? (
-        <div className="card p-6 sm:p-12 text-center">
-          <p className="text-white/40">No sessions yet.</p>
-          <Link href="/boardroom" className="text-new-leaf hover:text-new-leaf/70 text-sm mt-2 inline-block transition-colors">
-            Convene your first session →
-          </Link>
+        <div className="space-y-4">
+          <div className="card p-6 sm:p-8">
+            <p className="text-xs font-sub text-white/40 uppercase tracking-widest mb-3">No sessions yet</p>
+            <p className="text-white/55 text-sm mb-6 max-w-lg">
+              Each session you run is saved here. Your first one is one question away.
+            </p>
+            <p className="text-xs font-sub text-white/30 uppercase tracking-widest mb-3">Questions to start with</p>
+            <div className="space-y-2">
+              {[
+                "Should we pursue this new opportunity, or stay focused on what's working?",
+                "What's the most important thing we should be doing right now that we're not?",
+                "What assumptions are we making that, if wrong, would change everything?",
+                "Where are we underinvesting relative to our ambition?",
+              ].map((q) => (
+                <Link
+                  key={q}
+                  href={`/boardroom?q=${encodeURIComponent(q)}`}
+                  className="card-hover flex items-center justify-between gap-3 px-4 py-3"
+                >
+                  <span className="text-sm text-white/65">{q}</span>
+                  <span className="text-white/25 text-xs flex-shrink-0">Ask this →</span>
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">

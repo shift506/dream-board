@@ -547,17 +547,34 @@ export default function DecisionClient({ session }: { session: SessionData }) {
 
       {/* Tab content */}
       <div className="space-y-3">
-        {activeTab === "round1" &&
-          session.advisors.map((advisor) => (
-            <AdvisorCard
-              key={`${advisor.slug}-r1`}
-              advisor={advisor}
-              round="round1"
-              mode={session.mode}
-              expanded={expandedCards.has(`${advisor.slug}-r1`)}
-              onToggle={() => toggleCard(`${advisor.slug}-r1`)}
-            />
-          ))}
+        {activeTab === "round1" && (
+          <>
+            {session.advisors.map((advisor) => (
+              <AdvisorCard
+                key={`${advisor.slug}-r1`}
+                advisor={advisor}
+                round="round1"
+                mode={session.mode}
+                expanded={expandedCards.has(`${advisor.slug}-r1`)}
+                onToggle={() => toggleCard(`${advisor.slug}-r1`)}
+              />
+            ))}
+            {session.synthesis && (
+              <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg border border-white/6 bg-white/2 mt-2">
+                <p className="text-xs text-white/30">
+                  Reading order: Round 1 → Round 2 → Tensions → Synthesis
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("synthesis")}
+                  className="text-xs text-new-leaf/70 hover:text-new-leaf transition-colors whitespace-nowrap flex-shrink-0"
+                >
+                  Skip to Synthesis →
+                </button>
+              </div>
+            )}
+          </>
+        )}
 
         {activeTab === "round2" &&
           session.advisors.map((advisor) => (

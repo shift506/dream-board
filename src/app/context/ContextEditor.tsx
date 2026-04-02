@@ -348,10 +348,12 @@ function ModeSelector({
   mode,
   onChange,
   onLoadExample,
+  isEmpty,
 }: {
   mode: Mode;
   onChange: (m: Mode) => void;
   onLoadExample: () => void;
+  isEmpty: boolean;
 }) {
   const exampleNames: Record<Mode, string> = {
     business: "Berg's architecture firm",
@@ -379,14 +381,33 @@ function ModeSelector({
       </div>
       <div className="flex items-center justify-between gap-4 mt-2.5">
         <p className="text-xs text-white/30">{MODES[mode].description}</p>
-        <button
-          type="button"
-          onClick={onLoadExample}
-          className="text-xs text-new-leaf/70 hover:text-new-leaf transition-colors whitespace-nowrap flex-shrink-0"
-        >
-          Try: {exampleNames[mode]} →
-        </button>
+        {!isEmpty && (
+          <button
+            type="button"
+            onClick={onLoadExample}
+            className="text-xs text-new-leaf/70 hover:text-new-leaf transition-colors whitespace-nowrap flex-shrink-0"
+          >
+            Try: {exampleNames[mode]} →
+          </button>
+        )}
       </div>
+      {isEmpty && (
+        <div className="mt-4 flex items-center justify-between gap-4 p-3 rounded-lg border border-new-leaf/20 bg-new-leaf/5">
+          <div>
+            <p className="text-xs font-medium text-white/70">No context yet</p>
+            <p className="text-xs text-white/35 mt-0.5">
+              The more your advisors know, the sharper their advice. Load an example to see what good context looks like.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onLoadExample}
+            className="text-xs px-3 py-1.5 rounded-lg bg-new-leaf text-galaxy font-medium hover:bg-new-leaf/80 transition-colors whitespace-nowrap flex-shrink-0"
+          >
+            Load example →
+          </button>
+        </div>
+      )}
       <div className="border-t border-white/5 mt-6" />
     </div>
   );
@@ -522,8 +543,8 @@ export default function ContextEditor({
   }, [mode, doSave]);
 
   const form = forms[mode];
-
   const cfg = MODES[mode];
+  const isEmpty = !form.name && !form.whatBuilding && !form.whatGoodLooks;
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -543,7 +564,7 @@ export default function ContextEditor({
       </div>
 
       <div className="card p-6 sm:p-8">
-        <ModeSelector mode={mode} onChange={handleModeChange} onLoadExample={handleLoadExample} />
+        <ModeSelector mode={mode} onChange={handleModeChange} onLoadExample={handleLoadExample} isEmpty={isEmpty} />
 
         <form onSubmit={handleSave} className="space-y-6">
 

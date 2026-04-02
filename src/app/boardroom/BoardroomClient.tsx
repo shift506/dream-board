@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useCallback, type ChangeEvent } from "react";
+import { useState, useRef, useCallback, useEffect, type ChangeEvent } from "react";
 import mammoth from "mammoth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Advisor } from "@/lib/advisors";
@@ -68,7 +68,13 @@ export default function BoardroomClient({
   boards: string[];
 }) {
   const router = useRouter();
-  const [question, setQuestion] = useState("");
+  const searchParams = useSearchParams();
+  const [question, setQuestion] = useState(() => searchParams.get("q") ?? "");
+
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q) setQuestion(q);
+  }, [searchParams]);
   const [mode, setMode] = useState<Mode>("decision");
   const [includeContext, setIncludeContext] = useState(true);
   const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set());
@@ -301,7 +307,7 @@ export default function BoardroomClient({
   // ── SETUP SCREEN ──────────────────────────────────────────────────────
   if (phase === "idle") {
     return (
-      <div className="space-y-8 animate-fade-in">
+      <><div className="space-y-8 animate-fade-in">
         <div className="pt-4">
           <p className="text-new-leaf text-xs font-sub tracking-widest uppercase mb-2">Boardroom</p>
           <h1 className="text-3xl font-semibold text-white">Convene a Session</h1>
@@ -320,12 +326,13 @@ export default function BoardroomClient({
                 : "border-transparent hover:border-white/10"
             }`}
           >
-            <p className={`text-sm font-semibold mb-1 ${mode === "decision" ? "text-new-leaf" : "text-white/70"}`}>
+            <p className={`text-sm font-semibold mb-1.5 ${mode === "decision" ? "text-new-leaf" : "text-white/70"}`}>
               Decision Mode
             </p>
-            <p className="text-xs text-white/40 leading-snug">
-              Advisors vote YES / NO / CONDITIONAL across two rounds. Best when you need to commit.
+            <p className="text-xs text-white/40 leading-snug mb-2">
+              Use when you need to commit to a path. Each advisor takes a position and defends it.
             </p>
+            <p className="text-xs text-white/25">You get: votes · debate · vote tracker · synthesis</p>
           </button>
           <button
             onClick={() => setMode("advisory")}
@@ -335,12 +342,13 @@ export default function BoardroomClient({
                 : "border-transparent hover:border-white/10"
             }`}
           >
-            <p className={`text-sm font-semibold mb-1 ${mode === "advisory" ? "text-ocean" : "text-white/70"}`}>
+            <p className={`text-sm font-semibold mb-1.5 ${mode === "advisory" ? "text-ocean" : "text-white/70"}`}>
               Advisory Mode
             </p>
-            <p className="text-xs text-white/40 leading-snug">
-              Advisors map the strategic terrain — no votes, just reads, tensions, and questions for you.
+            <p className="text-xs text-white/40 leading-snug mb-2">
+              Use when you need to think, not decide. Advisors map terrain, surface tensions, ask questions.
             </p>
+            <p className="text-xs text-white/25">You get: strategic reads · tensions · questions · synthesis</p>
           </button>
         </div>
 
@@ -500,6 +508,21 @@ export default function BoardroomClient({
           )}
         </div>
       </div>
+
+      {/* Mobile sticky CTA — floats above bottom nav when ready */}
+      <div className={`sm:hidden fixed bottom-20 left-0 right-0 z-40 px-4 py-3 transition-all duration-200 ${
+        question.trim() && selectedSlugs.size > 0
+          ? "translate-y-0 opacity-100"
+          : "translate-y-2 opacity-0 pointer-events-none"
+      }`}>
+        <button
+          onClick={runSession}
+          className="btn-primary w-full shadow-xl"
+        >
+          Convene {selectedSlugs.size > 0 ? `${selectedSlugs.size} advisor${selectedSlugs.size !== 1 ? "s" : ""}` : "Board"} →
+        </button>
+      </div>
+      </>
     );
   }
 
@@ -597,6 +620,22 @@ export default function BoardroomClient({
           {phase === "done" ? "New Session" : "Cancel"}
         </button>
       </div>
+
+      {/* Synthesis nudge when done */}
+      {phase === "done" && activeTab !== "synthesis" && tabsWithData.has("synthesis") && (
+        <button
+          onClick={() => setActiveTab("synthesis")}
+          className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-new-leaf/8 border border-new-leaf/20 hover:bg-new-leaf/12 transition-colors text-left"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-6 h-6 rounded-md bg-new-leaf/20 flex items-center justify-center flex-shrink-0">
+              <span className="text-new-leaf text-xs font-bold">C</span>
+            </div>
+            <span className="text-sm text-white/75">Session complete — read the Chair&apos;s Synthesis for the full picture</span>
+          </div>
+          <span className="text-new-leaf text-xs whitespace-nowrap">Jump to Synthesis →</span>
+        </button>
+      )}
 
       {/* Running indicator */}
       {isRunning && (
