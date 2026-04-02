@@ -30,14 +30,14 @@ const config: Config = {
         blossom: "#F0AB86",
       },
       animation: {
-        "fade-in": "fadeIn 0.3s ease-in-out",
-        "slide-up": "slideUp 0.4s ease-out",
+        "fade-in": "fadeIn 0.25s ease-out both",
+        "slide-up": "slideUp 0.35s ease-out both",
         pulse: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
       },
       keyframes: {
         fadeIn: {
-          "0%": { opacity: "0" },
-          "100%": { opacity: "1" },
+          "0%": { opacity: "0", transform: "translateY(6px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
         slideUp: {
           "0%": { transform: "translateY(12px)", opacity: "0" },
