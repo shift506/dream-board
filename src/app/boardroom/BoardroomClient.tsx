@@ -254,18 +254,11 @@ export default function BoardroomClient({
               const { phase: p, advisor } = event;
               if (p === "round1" && advisor) {
                 setMemos((prev) => ({ ...prev, [advisor]: { ...prev[advisor], done1: true } }));
-                setExpandedCards((prev) => {
-                  const next = new Set(prev);
-                  next.delete(advisor);
-                  return next;
-                });
+                // Keep card expanded so user can finish reading — they can collapse manually
+                setExpandedCards((prev) => new Set([...prev, advisor]));
               } else if (p === "round2" && advisor) {
                 setMemos((prev) => ({ ...prev, [advisor]: { ...prev[advisor], done2: true } }));
-                setExpandedCards((prev) => {
-                  const next = new Set(prev);
-                  next.delete(advisor);
-                  return next;
-                });
+                setExpandedCards((prev) => new Set([...prev, advisor]));
               }
             } else if (event.type === "done") {
               setPhase("done");
