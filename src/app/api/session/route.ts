@@ -10,11 +10,12 @@ export const maxDuration = 300;
 const client = new Anthropic();
 
 export async function POST(req: NextRequest) {
-  const { question, advisorSlugs, mode = "decision", documents = [] } = (await req.json()) as {
+  const { question, advisorSlugs, mode = "decision", documents = [], contextMode = "business" } = (await req.json()) as {
     question: string;
     advisorSlugs: string[];
     mode?: "decision" | "advisory";
     documents?: { name: string; content: string }[];
+    contextMode?: string;
   };
 
   if (!question || !advisorSlugs?.length) {
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
   }
 
   const userId = req.cookies.get("boardroom-id")?.value ?? "anonymous";
-  const context = await getBusinessContext(userId);
+  const context = await getBusinessContext(userId, contextMode);
 
   const supportingMaterials =
     documents.length > 0

@@ -14,11 +14,11 @@ async function fetchBlob(url: string): Promise<string> {
   return res.text();
 }
 
-export async function getBusinessContext(userId: string): Promise<string> {
+export async function getBusinessContext(userId: string, mode = "business"): Promise<string> {
   if (blobAvailable()) {
     try {
       const { list } = await import("@vercel/blob");
-      const { blobs } = await list({ prefix: `users/${userId}/context.md` });
+      const { blobs } = await list({ prefix: `users/${userId}/context-${mode}.md` });
       if (blobs.length > 0) {
         return fetchBlob(blobs[0].url);
       }
@@ -29,10 +29,10 @@ export async function getBusinessContext(userId: string): Promise<string> {
   return fs.readFileSync(contextPath, "utf-8");
 }
 
-export async function setBusinessContext(content: string, userId: string): Promise<void> {
+export async function setBusinessContext(content: string, userId: string, mode = "business"): Promise<void> {
   if (blobAvailable()) {
     const { put } = await import("@vercel/blob");
-    await put(`users/${userId}/context.md`, content, {
+    await put(`users/${userId}/context-${mode}.md`, content, {
       access: "private",
       addRandomSuffix: false,
       allowOverwrite: true,

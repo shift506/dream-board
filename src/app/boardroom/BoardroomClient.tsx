@@ -120,7 +120,7 @@ export default function BoardroomClient({
       ? advisors
       : advisors.filter((a) => a.boards.includes(filterBoard));
 
-  const ADVISOR_LIMIT = 3;
+  const ADVISOR_LIMIT = 6;
 
   const toggleAdvisor = (slug: string) => {
     setSelectedSlugs((prev) => {
@@ -183,7 +183,7 @@ export default function BoardroomClient({
       const res = await fetch("/api/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, advisorSlugs: Array.from(selectedSlugs), mode, documents }),
+        body: JSON.stringify({ question, advisorSlugs: Array.from(selectedSlugs), mode, documents, contextMode: localStorage.getItem("boardroom-mode") ?? "business" }),
         signal: abortRef.current.signal,
       });
 

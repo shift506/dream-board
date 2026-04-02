@@ -426,8 +426,18 @@ function BoardLink({ userId }: { userId: string }) {
 
 // ─── Main component ────────────────────────────────────────────────────────
 
-export default function ContextEditor({ initial, userId }: { initial: string; userId: string }) {
-  const [form, setForm] = useState<ContextForm>(() => parseContext(initial));
+export default function ContextEditor({
+  initial,
+  userId,
+}: {
+  initial: { business: string; project: string; personal: string };
+  userId: string;
+}) {
+  const [forms, setForms] = useState<Record<Mode, ContextForm>>(() => ({
+    business: parseContext(initial.business),
+    project: parseContext(initial.project),
+    personal: parseContext(initial.personal),
+  }));
   const [status, setStatus] = useState<SaveStatus>("clean");
   const [saveError, setSaveError] = useState<SaveError>(null);
   const [mode, setMode] = useState<Mode>("business");
@@ -448,14 +458,14 @@ export default function ContextEditor({ initial, userId }: { initial: string; us
   };
 
   const doSave = useCallback(
-    async (f: ContextForm) => {
+    async (f: ContextForm, m: Mode) => {
       setStatus("saving");
       setSaveError(null);
       try {
         const res = await fetch("/api/context", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: buildMarkdown(f) }),
+          body: JSON.stringify({ content: buildMarkdown(f), mode: m }),
         });
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
@@ -477,10 +487,12 @@ export default function ContextEditor({ initial, userId }: { initial: string; us
     (key: keyof ContextForm) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = e.target.value;
-      setForm((prev) => {
-        const next = { ...prev, [key]: value };
+      const currentMode = mode;
+      setForms((prev) => {
+        const updated = { ...prev[currentMode], [key]: value };
+        const next = { ...prev, [currentMode]: updated };
         if (timerRef.current) clearTimeout(timerRef.current);
-        timerRef.current = setTimeout(() => doSave(next), 1500);
+        timerRef.current = setTimeout(() => doSave(updated, currentMode), 1500);
         return next;
       });
       setStatus("dirty");
@@ -496,18 +508,20 @@ export default function ContextEditor({ initial, userId }: { initial: string; us
     async (e: FormEvent) => {
       e.preventDefault();
       if (timerRef.current) clearTimeout(timerRef.current);
-      await doSave(form);
+      await doSave(forms[mode], mode);
     },
-    [form, doSave]
+    [forms, mode, doSave]
   );
 
   const handleLoadExample = useCallback(() => {
     const example = EXAMPLES[mode];
-    setForm(example);
+    setForms((prev) => ({ ...prev, [mode]: example }));
     setStatus("dirty");
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => doSave(example), 1500);
+    timerRef.current = setTimeout(() => doSave(example, mode), 1500);
   }, [mode, doSave]);
+
+  const form = forms[mode];
 
   const cfg = MODES[mode];
 

@@ -7,6 +7,10 @@ import ContextEditor from "./ContextEditor";
 export default async function ContextPage() {
   const cookieStore = await cookies();
   const userId = cookieStore.get("boardroom-id")?.value ?? "anonymous";
-  const content = await getBusinessContext(userId);
-  return <ContextEditor initial={content} userId={userId} />;
+  const [business, project, personal] = await Promise.all([
+    getBusinessContext(userId, "business"),
+    getBusinessContext(userId, "project"),
+    getBusinessContext(userId, "personal"),
+  ]);
+  return <ContextEditor initial={{ business, project, personal }} userId={userId} />;
 }
