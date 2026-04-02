@@ -10,161 +10,324 @@ import type { SessionData, SessionAdvisor } from "@/lib/decisions";
 
 // ─── HTML Report Generator ─────────────────────────────────────────────────
 
+// Brand tokens
+const G = {
+  galaxy: "#10213C",
+  galaxyLight: "#1a2d4a",
+  galaxyLighter: "#203354",
+  newLeaf: "#D6DE23",
+  breeze: "#BAE0C6",
+  ocean: "#3B8EA5",
+  blossom: "#F0AB86",
+};
+
+const BOARD_BORDER: Record<string, string> = {
+  "Marketing": G.blossom,
+  "Strategy & Direction": G.ocean,
+  "Revenue & Business Model": G.breeze,
+  "Execution & Momentum": G.newLeaf,
+  "Systems Change": G.ocean,
+  "Personal": G.blossom,
+};
+
+const VOTE_COLORS: Record<string, { text: string; bg: string; border: string }> = {
+  YES:         { text: G.breeze,   bg: "rgba(186,224,198,0.12)", border: "rgba(186,224,198,0.4)" },
+  NO:          { text: G.blossom,  bg: "rgba(240,171,134,0.12)", border: "rgba(240,171,134,0.4)" },
+  CONDITIONAL: { text: G.ocean,    bg: "rgba(59,142,165,0.12)",  border: "rgba(59,142,165,0.4)"  },
+};
+
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 function mdToHtml(md: string): string {
-  return md
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  const escaped = esc(md);
+  return escaped
     .replace(/^### (.+)$/gm, "<h3>$1</h3>")
     .replace(/^## (.+)$/gm, "<h2>$1</h2>")
     .replace(/^# (.+)$/gm, "<h1>$1</h1>")
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/^[-*] (.+)$/gm, "<li>$1</li>")
-    .replace(/(<li>.*<\/li>\n?)+/g, (m) => `<ul>${m}</ul>`)
-    .replace(/\n{2,}/g, "</p><p>")
-    .replace(/^(?!<[hul])(.+)$/gm, (line) => line ? line : "")
-    .replace(/^([^<\n].+)$/gm, "<p>$1</p>")
-    .replace(/<p><\/p>/g, "");
+    .replace(/(<li>[^]*?<\/li>\n?)+/g, (m) => `<ul>${m}</ul>`)
+    .split(/\n{2,}/)
+    .map((block) => block.startsWith("<") ? block : `<p>${block.replace(/\n/g, " ")}</p>`)
+    .join("\n")
+    .replace(/<p>\s*<\/p>/g, "");
+}
+
+function advisorCard(advisor: SessionAdvisor, round: "round1" | "round2", _mode: "decision" | "advisory", idx: number): string {
+  const content = round === "round1" ? advisor.round1 : advisor.round2;
+  if (!content) return "";
+  const voteMatch = content.match(/\*\*(?:your\s+)?vote[^*]*\*\*[:\s]*(YES|NO|CONDITIONAL)/i)
+    || content.match(/\bVOTE[:\s]+(YES|NO|CONDITIONAL)\b/i);
+  const vote = voteMatch?.[1]?.toUpperCase();
+  const vc = vote ? VOTE_COLORS[vote] : null;
+  const borderColor = BOARD_BORDER[advisor.boards?.[0]] ?? "rgba(255,255,255,0.15)";
+  const initials = advisor.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  const cardId = `card-${round}-${idx}`;
+
+  return `
+<div class="advisor-card" style="border-left-color:${borderColor}">
+  <button class="advisor-toggle" onclick="toggle('${cardId}')" aria-expanded="false">
+    <div class="advisor-avatar">${esc(initials)}</div>
+    <div class="advisor-meta">
+      <div class="advisor-name-row">
+        <span class="advisor-name">${esc(advisor.name)}</span>
+        <span class="advisor-focus">${esc(advisor.focus)}</span>
+        ${vc && vote ? `<span class="vote-badge" style="color:${vc.text};background:${vc.bg};border-color:${vc.border}">${vote}</span>` : ""}
+      </div>
+      <div class="advisor-preview" id="${cardId}-preview">${esc(advisor.name.split(" ")[0])} — click to expand</div>
+    </div>
+    <svg class="chevron" id="${cardId}-chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 4l4 4 4-4"/></svg>
+  </button>
+  <div class="advisor-body" id="${cardId}" style="display:none">
+    <div class="md-content">${mdToHtml(content)}</div>
+  </div>
+</div>`;
 }
 
 function buildReport(session: SessionData): string {
-  const voteColor: Record<string, string> = {
-    YES: "#22c55e", NO: "#ef4444", CONDITIONAL: "#f59e0b",
-  };
+  const hasRound2 = session.advisors.some((a) => !!a.round2);
+  const hasTensions = !!session.tension;
 
-  const advisorSection = (advisor: SessionAdvisor, round: "round1" | "round2") => {
-    const content = round === "round1" ? advisor.round1 : advisor.round2;
-    if (!content) return "";
-    const voteMatch = content.match(/\*\*(?:your\s+)?vote[^*]*\*\*[:\s]*(YES|NO|CONDITIONAL)/i)
-      || content.match(/\bVOTE[:\s]+(YES|NO|CONDITIONAL)\b/i);
-    const vote = voteMatch?.[1]?.toUpperCase();
-    return `
-      <div class="advisor-card">
-        <div class="advisor-header">
-          <div class="advisor-meta">
-            <strong>${advisor.name}</strong>
-            <span class="focus">${advisor.focus}</span>
-            ${vote ? `<span class="vote" style="color:${voteColor[vote]};border-color:${voteColor[vote]}">${vote}</span>` : ""}
-          </div>
-        </div>
-        <div class="advisor-content">${mdToHtml(content)}</div>
-      </div>`;
-  };
-
-  const tensionRows = session.tension?.vote_summary
-    ? Object.entries(session.tension.vote_summary).flatMap(([vote, names]) =>
-        names.map((name) => `
-          <tr>
-            <td>${name}</td>
-            <td style="color:${voteColor[vote] ?? "#999"};font-weight:600">${vote}</td>
-            <td></td>
-          </tr>`)
-      ).join("")
-    : "";
+  const tabs = [
+    { id: "tab-r1", label: "Round 1", sub: session.mode === "advisory" ? "Strategic Reads" : "Positions" },
+    ...(hasRound2 ? [{ id: "tab-r2", label: "Round 2", sub: session.mode === "advisory" ? "Pushback" : "Rebuttals" }] : []),
+    ...(hasTensions ? [{ id: "tab-tensions", label: "Tensions", sub: "" }] : []),
+    ...(session.synthesis ? [{ id: "tab-synthesis", label: "Synthesis", sub: "" }] : []),
+  ];
 
   const faultLines = session.tension?.fault_lines?.map((fl) => `
-    <div class="fault-line">
-      <div class="fault-label">${fl.topic}</div>
-      <div class="fault-camps">
-        <div><strong>${fl.side_a.label}:</strong> ${fl.side_a.advisors.join(", ")}</div>
-        <div><strong>${fl.side_b.label}:</strong> ${fl.side_b.advisors.join(", ")}</div>
-        <div class="fault-description">${fl.description}</div>
+    <div class="fault-card">
+      <div class="fault-topic">${esc(fl.topic)}</div>
+      <div class="fault-sides">
+        <div class="fault-side"><span class="fault-side-label">${esc(fl.side_a.label)}</span>${fl.side_a.advisors.map(esc).join(", ")}</div>
+        <div class="fault-vs">vs</div>
+        <div class="fault-side"><span class="fault-side-label">${esc(fl.side_b.label)}</span>${fl.side_b.advisors.map(esc).join(", ")}</div>
       </div>
+      <div class="fault-desc">${esc(fl.description)}</div>
     </div>`).join("") ?? "";
 
-  const hasRound2 = session.advisors.some((a) => !!a.round2);
+  const agreements = session.tension?.agreements?.map((a) =>
+    `<li>${esc(a)}</li>`
+  ).join("") ?? "";
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${session.question}</title>
+<title>${esc(session.question)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f9f9f8; color: #1a1a1a; line-height: 1.6; padding: 2rem 1rem; }
-  .container { max-width: 760px; margin: 0 auto; }
-  .report-header { border-bottom: 2px solid #e5e5e5; padding-bottom: 1.5rem; margin-bottom: 2rem; }
-  .report-header .badge { display: inline-block; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: 4px; border: 1px solid; margin-bottom: 0.75rem; background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
-  .report-header h1 { font-size: 1.6rem; font-weight: 700; line-height: 1.3; margin-bottom: 0.5rem; }
-  .report-header .meta { font-size: 0.8rem; color: #666; }
-  .section { margin-bottom: 2.5rem; }
-  .section-title { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #999; margin-bottom: 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid #e5e5e5; }
-  .advisor-card { border: 1px solid #e5e5e5; border-radius: 8px; margin-bottom: 1rem; background: #fff; overflow: hidden; }
-  .advisor-header { padding: 0.875rem 1rem; background: #fafafa; border-bottom: 1px solid #e5e5e5; }
-  .advisor-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-  .advisor-meta strong { font-size: 0.9rem; }
-  .focus { font-size: 0.75rem; color: #888; }
-  .vote { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid; }
-  .advisor-content { padding: 1rem; font-size: 0.875rem; }
-  .advisor-content h2 { font-size: 0.95rem; margin: 1rem 0 0.4rem; color: #333; }
-  .advisor-content h3 { font-size: 0.875rem; margin: 0.75rem 0 0.3rem; color: #444; }
-  .advisor-content p { margin-bottom: 0.6rem; }
-  .advisor-content ul { padding-left: 1.25rem; margin-bottom: 0.6rem; }
-  .advisor-content li { margin-bottom: 0.2rem; }
-  .advisor-content strong { font-weight: 600; }
-  .tensions-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-  .tensions-table th { text-align: left; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #999; padding: 0.4rem 0.75rem; border-bottom: 1px solid #e5e5e5; }
-  .tensions-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #f0f0f0; }
-  .fault-line { border: 1px solid #e5e5e5; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; background: #fff; }
-  .fault-label { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.5rem; }
-  .fault-camps { font-size: 0.8rem; color: #555; display: flex; flex-direction: column; gap: 0.25rem; }
-  .fault-description { margin-top: 0.5rem; color: #666; font-style: italic; }
-  .synthesis-card { border: 1px solid #bbf7d0; border-radius: 8px; background: #f0fdf4; padding: 1.25rem; }
-  .synthesis-card .chair { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
-  .synthesis-card .chair-badge { width: 28px; height: 28px; border-radius: 6px; background: #166534; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; }
-  .synthesis-card .chair-name { font-weight: 600; font-size: 0.875rem; }
-  .synthesis-content { font-size: 0.875rem; }
-  .synthesis-content h2 { font-size: 0.95rem; margin: 1rem 0 0.4rem; }
-  .synthesis-content p { margin-bottom: 0.6rem; }
-  .synthesis-content ul { padding-left: 1.25rem; margin-bottom: 0.6rem; }
-  .synthesis-content li { margin-bottom: 0.2rem; }
-  .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #e5e5e5; font-size: 0.75rem; color: #bbb; text-align: center; }
-  @media print { body { background: #fff; padding: 0; } }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --galaxy:${G.galaxy};--galaxy-light:${G.galaxyLight};--galaxy-lighter:${G.galaxyLighter};
+  --new-leaf:${G.newLeaf};--breeze:${G.breeze};--ocean:${G.ocean};--blossom:${G.blossom};
+}
+body{font-family:'Poppins',system-ui,sans-serif;background:var(--galaxy);color:rgba(255,255,255,0.85);line-height:1.6;min-height:100vh}
+a{color:var(--new-leaf)}
+
+/* Layout */
+.page{max-width:780px;margin:0 auto;padding:2rem 1.25rem 4rem}
+
+/* Header */
+.report-header{padding:2rem 0 1.75rem;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:2rem}
+.header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.25rem}
+.mode-badge{display:inline-block;font-size:0.65rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;padding:0.25rem 0.6rem;border-radius:4px;border:1px solid;background:rgba(214,222,35,0.1);color:var(--new-leaf);border-color:rgba(214,222,35,0.3)}
+.print-btn{font-family:inherit;font-size:0.75rem;padding:0.4rem 0.9rem;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);cursor:pointer;transition:all 0.15s}
+.print-btn:hover{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.85)}
+h1{font-size:1.6rem;font-weight:700;line-height:1.3;color:#fff;margin-bottom:0.5rem}
+.header-meta{font-size:0.75rem;color:rgba(255,255,255,0.35);display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap}
+.header-meta .sep{opacity:0.3}
+.advisor-chips{display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.75rem}
+.advisor-chip{font-size:0.7rem;padding:0.2rem 0.6rem;border-radius:4px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.55)}
+
+/* Tabs */
+.tabs{display:flex;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:1.5rem;overflow-x:auto;gap:0;-ms-overflow-style:none;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab-btn{flex-shrink:0;padding:0.75rem 1.25rem;font-family:inherit;font-size:0.82rem;font-weight:500;background:none;border:none;border-bottom:2px solid transparent;color:rgba(255,255,255,0.4);cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.tab-btn:hover{color:rgba(255,255,255,0.7)}
+.tab-btn.active{color:#fff;border-bottom-color:var(--new-leaf)}
+.tab-btn .sub{font-size:0.7rem;color:rgba(255,255,255,0.25);margin-left:0.35rem}
+.tab-btn.active .sub{color:rgba(255,255,255,0.4)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* Advisor cards */
+.advisor-card{border:1px solid rgba(255,255,255,0.08);border-left-width:3px;border-radius:8px;margin-bottom:0.75rem;background:var(--galaxy-light);overflow:hidden;transition:border-color 0.15s}
+.advisor-toggle{width:100%;padding:0.9rem 1rem;display:flex;align-items:center;gap:0.75rem;background:none;border:none;color:inherit;cursor:pointer;text-align:left;transition:background 0.15s}
+.advisor-toggle:hover{background:rgba(255,255,255,0.03)}
+.advisor-avatar{width:32px;height:32px;flex-shrink:0;border-radius:6px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:600;color:rgba(255,255,255,0.45)}
+.advisor-meta{flex:1;min-width:0}
+.advisor-name-row{display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap}
+.advisor-name{font-size:0.875rem;font-weight:600;color:rgba(255,255,255,0.9)}
+.advisor-focus{font-size:0.72rem;color:rgba(255,255,255,0.35)}
+.advisor-preview{font-size:0.72rem;color:rgba(255,255,255,0.3);margin-top:0.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chevron{width:12px;height:12px;flex-shrink:0;color:rgba(255,255,255,0.25);transition:transform 0.2s}
+.chevron.open{transform:rotate(180deg)}
+.advisor-body{border-top:1px solid rgba(255,255,255,0.06);padding:1.1rem 1rem 1rem 1rem}
+
+/* Markdown content */
+.md-content{font-size:0.85rem;color:rgba(255,255,255,0.75);line-height:1.7}
+.md-content h1,.md-content h2{font-size:0.875rem;font-weight:600;color:rgba(255,255,255,0.9);margin:1rem 0 0.35rem}
+.md-content h3{font-size:0.82rem;font-weight:600;color:rgba(255,255,255,0.75);margin:0.75rem 0 0.25rem}
+.md-content p{margin-bottom:0.6rem}
+.md-content ul{padding-left:1.1rem;margin-bottom:0.6rem}
+.md-content li{margin-bottom:0.2rem}
+.md-content strong{font-weight:600;color:rgba(255,255,255,0.9)}
+.md-content em{font-style:italic;color:rgba(255,255,255,0.6)}
+
+/* Vote badge */
+.vote-badge{font-size:0.62rem;font-weight:700;letter-spacing:0.08em;padding:0.15rem 0.45rem;border-radius:4px;border:1px solid}
+
+/* Tensions */
+.tensions-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+@media(max-width:540px){.tensions-grid{grid-template-columns:1fr}}
+.vote-group{background:var(--galaxy-light);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:0.875rem}
+.vote-group-label{font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem}
+.vote-group-names{font-size:0.82rem;color:rgba(255,255,255,0.65)}
+.fault-card{background:var(--galaxy-light);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:1rem;margin-bottom:0.75rem}
+.fault-topic{font-size:0.875rem;font-weight:600;color:rgba(255,255,255,0.9);margin-bottom:0.75rem}
+.fault-sides{display:grid;grid-template-columns:1fr auto 1fr;gap:0.5rem;align-items:start;margin-bottom:0.75rem}
+.fault-side{font-size:0.8rem;color:rgba(255,255,255,0.6)}
+.fault-side-label{display:block;font-size:0.65rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:0.2rem}
+.fault-vs{font-size:0.7rem;color:rgba(255,255,255,0.2);text-align:center;padding-top:1.2rem}
+.fault-desc{font-size:0.78rem;color:rgba(255,255,255,0.4);font-style:italic;border-top:1px solid rgba(255,255,255,0.06);padding-top:0.6rem}
+.agreements{margin-top:1rem}
+.agreements-title{font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.3);margin-bottom:0.6rem}
+.agreements ul{padding-left:1.1rem}
+.agreements li{font-size:0.82rem;color:rgba(255,255,255,0.55);margin-bottom:0.25rem}
+
+/* Synthesis */
+.synthesis-card{background:rgba(214,222,35,0.05);border:1px solid rgba(214,222,35,0.2);border-radius:8px;padding:1.25rem}
+.synthesis-chair{display:flex;align-items:center;gap:0.6rem;margin-bottom:1rem}
+.chair-badge{width:30px;height:30px;border-radius:6px;background:rgba(214,222,35,0.2);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--new-leaf)}
+.chair-name{font-size:0.875rem;font-weight:600;color:rgba(255,255,255,0.9)}
+.synthesis-card .md-content h2{color:var(--new-leaf)}
+
+/* Footer */
+.report-footer{margin-top:3rem;padding-top:1.25rem;border-top:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.footer-brand{font-size:0.72rem;color:rgba(255,255,255,0.2)}
+.footer-brand strong{color:rgba(214,222,35,0.6)}
+
+/* Section label */
+.section-label{font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.25);margin-bottom:1rem}
+
+/* Print */
+@media print{
+  body{background:#fff!important;color:#111!important}
+  .print-btn{display:none}
+  .tabs{display:none}
+  .tab-panel{display:block!important}
+  .advisor-body{display:block!important}
+  .advisor-card{background:#f9f9f9!important;border-color:#ddd!important;break-inside:avoid}
+  .synthesis-card{background:#f9fff0!important;border-color:#bada6e!important}
+  .fault-card,.vote-group{background:#f9f9f9!important;border-color:#ddd!important}
+  .md-content,.fault-side,.fault-desc,.agreements li{color:#333!important}
+  .advisor-name,.fault-topic,.chair-name{color:#111!important}
+  .advisor-focus,.advisor-preview{color:#666!important}
+  h1{color:#111!important}
+  .header-meta{color:#666!important}
+}
 </style>
 </head>
 <body>
-<div class="container">
+<div class="page">
+
   <div class="report-header">
-    <div class="badge">${session.mode === "advisory" ? "Advisory Session" : "Decision Session"}</div>
-    <h1>${session.question}</h1>
-    <div class="meta">${session.date} &nbsp;·&nbsp; ${session.advisors.map((a) => a.name).join(", ")}</div>
+    <div class="header-top">
+      <span class="mode-badge">${session.mode === "advisory" ? "Advisory Session" : "Decision Session"}</span>
+      <button class="print-btn" onclick="window.print()">Print / Save PDF</button>
+    </div>
+    <h1>${esc(session.question)}</h1>
+    <div class="header-meta">
+      <span>${esc(session.date)}</span>
+      <span class="sep">·</span>
+      <span>${session.advisors.length} advisor${session.advisors.length !== 1 ? "s" : ""}</span>
+    </div>
+    <div class="advisor-chips">
+      ${session.advisors.map((a) => `<span class="advisor-chip">${esc(a.name)}</span>`).join("")}
+    </div>
   </div>
 
-  <div class="section">
-    <div class="section-title">Round 1 — ${session.mode === "advisory" ? "Strategic Reads" : "Positions"}</div>
-    ${session.advisors.map((a) => advisorSection(a, "round1")).join("")}
+  <div class="tabs">
+    ${tabs.map((t, i) => `
+    <button class="tab-btn${i === 0 ? " active" : ""}" onclick="switchTab('${t.id}')" id="btn-${t.id}">
+      ${esc(t.label)}${t.sub ? `<span class="sub">${esc(t.sub)}</span>` : ""}
+    </button>`).join("")}
+  </div>
+
+  <div class="tab-panel active" id="tab-r1">
+    ${session.advisors.map((a, i) => advisorCard(a, "round1", session.mode, i)).join("")}
   </div>
 
   ${hasRound2 ? `
-  <div class="section">
-    <div class="section-title">Round 2 — ${session.mode === "advisory" ? "Pushback" : "Rebuttals"}</div>
-    ${session.advisors.map((a) => advisorSection(a, "round2")).join("")}
+  <div class="tab-panel" id="tab-r2">
+    ${session.advisors.map((a, i) => advisorCard(a, "round2", session.mode, i)).join("")}
   </div>` : ""}
 
-  ${session.tension ? `
-  <div class="section">
-    <div class="section-title">Tensions</div>
-    <table class="tensions-table">
-      <thead><tr><th>Advisor</th><th>Vote</th><th>Condition</th></tr></thead>
-      <tbody>${tensionRows}</tbody>
-    </table>
-    ${faultLines ? `<div style="margin-top:1rem">${faultLines}</div>` : ""}
+  ${hasTensions ? `
+  <div class="tab-panel" id="tab-tensions">
+    ${session.tension?.vote_summary ? `
+    <div class="tensions-grid">
+      ${Object.entries(session.tension.vote_summary).map(([vote, names]) => {
+        const vc = VOTE_COLORS[vote];
+        return `<div class="vote-group">
+          <div class="vote-group-label" style="color:${vc?.text ?? "#fff"}">${esc(vote)}</div>
+          <div class="vote-group-names">${(names as string[]).map(esc).join(", ")}</div>
+        </div>`;
+      }).join("")}
+    </div>` : ""}
+    ${faultLines}
+    ${agreements ? `<div class="agreements"><div class="agreements-title">Points of Agreement</div><ul>${agreements}</ul></div>` : ""}
   </div>` : ""}
 
   ${session.synthesis ? `
-  <div class="section">
-    <div class="section-title">Synthesis</div>
+  <div class="tab-panel" id="tab-synthesis">
     <div class="synthesis-card">
-      <div class="chair">
+      <div class="synthesis-chair">
         <div class="chair-badge">C</div>
         <span class="chair-name">The Chair</span>
       </div>
-      <div class="synthesis-content">${mdToHtml(session.synthesis)}</div>
+      <div class="md-content">${mdToHtml(session.synthesis)}</div>
     </div>
   </div>` : ""}
 
-  <div class="footer">Generated by Your Dream Board</div>
+  <div class="report-footer">
+    <span class="footer-brand">Generated by <strong>Your Dream Board</strong></span>
+    <button class="print-btn" onclick="window.print()">Print / Save PDF</button>
+  </div>
+
 </div>
+<script>
+function switchTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('btn-' + id).classList.add('active');
+}
+function toggle(id) {
+  const body = document.getElementById(id);
+  const chevron = document.getElementById(id + '-chevron');
+  const preview = document.getElementById(id + '-preview');
+  const btn = body.previousElementSibling;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  chevron.classList.toggle('open', !isOpen);
+  btn.setAttribute('aria-expanded', String(!isOpen));
+  if (preview) preview.style.display = isOpen ? 'block' : 'none';
+}
+// Auto-expand first advisor in each round
+document.querySelectorAll('.tab-panel').forEach(panel => {
+  const first = panel.querySelector('.advisor-card');
+  if (first) {
+    const btn = first.querySelector('.advisor-toggle');
+    if (btn) btn.click();
+  }
+});
+</script>
 </body>
 </html>`;
 }
