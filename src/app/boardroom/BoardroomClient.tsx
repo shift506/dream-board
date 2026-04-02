@@ -63,9 +63,11 @@ function getPreview(text: string): string {
 export default function BoardroomClient({
   advisors,
   boards,
+  hasContext,
 }: {
   advisors: Advisor[];
   boards: string[];
+  hasContext: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -370,16 +372,29 @@ export default function BoardroomClient({
           />
 
           {/* Context toggle */}
-          <button
-            type="button"
-            onClick={() => setIncludeContext((v) => !v)}
-            className="flex items-center gap-2 text-xs text-white/40 hover:text-white/65 transition-colors pt-1"
-          >
-            <span className={`w-8 h-4 rounded-full flex items-center transition-colors flex-shrink-0 ${includeContext ? "bg-new-leaf/70" : "bg-white/15"}`}>
-              <span className={`w-3 h-3 rounded-full bg-white shadow transition-transform mx-0.5 ${includeContext ? "translate-x-4" : "translate-x-0"}`} />
-            </span>
-            {includeContext ? "Using your context" : "No context — open question"}
-          </button>
+          <div className="pt-1 space-y-2">
+            <button
+              type="button"
+              onClick={() => setIncludeContext((v) => !v)}
+              className="flex items-center gap-2 text-xs text-white/40 hover:text-white/65 transition-colors"
+            >
+              <span className={`w-8 h-4 rounded-full flex items-center transition-colors flex-shrink-0 ${includeContext ? "bg-new-leaf/70" : "bg-white/15"}`}>
+                <span className={`w-3 h-3 rounded-full bg-white shadow transition-transform mx-0.5 ${includeContext ? "translate-x-4" : "translate-x-0"}`} />
+              </span>
+              {includeContext
+                ? hasContext ? "Using your context" : "Context on"
+                : "No context — open question"}
+            </button>
+            {includeContext && !hasContext && (
+              <p className="text-xs text-blossom/70 pl-10">
+                You haven&apos;t added context yet —{" "}
+                <a href="/context" className="underline underline-offset-2 hover:text-blossom transition-colors">
+                  set it up first
+                </a>
+                {" "}or turn this off to run without it.
+              </p>
+            )}
+          </div>
 
           {/* Supporting documents */}
           <div className="pt-1 space-y-2">
