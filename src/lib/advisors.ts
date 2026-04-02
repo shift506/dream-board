@@ -39,6 +39,12 @@ const BOARD_ROSTER: Record<string, { focus: string; boards: string[] }> = {
   "nick-scott": { focus: "Narrative & Leadership", boards: ["Systems Change", "Personal"] },
   "clayton-christensen": { focus: "Disruptive Innovation", boards: ["Strategy & Direction", "Revenue & Business Model"] },
   "adrienne-maree-brown": { focus: "Movement Building", boards: ["Strategy & Direction", "Systems Change"] },
+  "adam-grant": { focus: "Rethinking, Generosity & Organizational Psychology", boards: ["Strategy & Direction", "Marketing", "Personal"] },
+  "andrea-gibson": { focus: "Language, Vulnerability & the Political Heart", boards: ["Personal", "Marketing"] },
+  "fred-rogers": { focus: "Presence & Human Dignity", boards: ["Personal", "Systems Change"] },
+  "leonardo-da-vinci": { focus: "Curiosity, Synthesis & Making", boards: ["Strategy & Direction", "Execution & Momentum", "Marketing"] },
+  "nelson-mandela": { focus: "Moral Leadership & Reconciliation", boards: ["Strategy & Direction", "Systems Change", "Personal"] },
+  "viktor-frankl": { focus: "Meaning, Suffering & Human Freedom", boards: ["Personal", "Systems Change"] },
 };
 
 export const ALL_BOARDS = [
