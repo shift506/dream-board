@@ -30,6 +30,12 @@ export default function RootLayout({
       <body className="min-h-screen bg-galaxy">
         <Navigation />
         <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-20 sm:pb-0">{children}</main>
+        <footer className="hidden sm:flex items-center justify-center gap-1.5 py-6 text-xs text-white/20">
+          <span>Powered by</span>
+          <span className="text-white/35 font-medium">Claude Sonnet 4.6</span>
+          <span className="mx-1 opacity-30">·</span>
+          <a href="https://shiftflow.ca" target="_blank" rel="noopener noreferrer" className="text-white/25 hover:text-white/50 transition-colors">shiftflow.ca</a>
+        </footer>
         <BottomNav />
       </body>
     </html>

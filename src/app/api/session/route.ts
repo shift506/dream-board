@@ -92,7 +92,7 @@ Speak in your authentic voice.`;
         let memoText = "";
 
         const aiStream = client.messages.stream({
-          model: "claude-haiku-4-5-20251001",
+          model: "claude-sonnet-4-6",
           max_tokens: 1500,
           messages: [{ role: "user", content: prompt }],
         });
@@ -165,7 +165,7 @@ Be direct. Name the other advisors when you push back.`}`;
         let rebuttalText = "";
 
         const aiStream = client.messages.stream({
-          model: "claude-haiku-4-5-20251001",
+          model: "claude-sonnet-4-6",
           max_tokens: 1000,
           messages: [{ role: "user", content: prompt }],
         });
@@ -226,7 +226,7 @@ Rules:
 - Only use the advisor slugs listed above${mode === "decision" ? "\n- For vote_summary, group slugs by their YES/NO/CONDITIONAL vote from Round 1" : "\n- Set vote_summary to null (advisory session)"}`;
 
         const tensionRes = await client.messages.create({
-          model: "claude-haiku-4-5-20251001",
+          model: "claude-sonnet-4-6",
           max_tokens: 700,
           messages: [{ role: "user", content: tensionPrompt }],
         });
@@ -278,7 +278,7 @@ Write this as a neutral facilitator. Surface the tension; don't flatten it.`}`;
       let synthesisText = "";
 
       const aiStream = client.messages.stream({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-sonnet-4-6",
         max_tokens: 1200,
         messages: [{ role: "user", content: synthesisPrompt }],
       });
