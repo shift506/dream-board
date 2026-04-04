@@ -129,7 +129,7 @@ export default function BoardroomClient({
       ? advisors
       : advisors.filter((a) => a.boards.includes(filterBoard));
 
-  const ADVISOR_LIMIT = 6;
+  const ADVISOR_LIMIT = 3;
 
   const toggleAdvisor = (slug: string) => {
     setSelectedSlugs((prev) => {

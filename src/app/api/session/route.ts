@@ -42,6 +42,9 @@ export async function POST(req: NextRequest) {
       const send = (event: object) => {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
       };
+      const ping = () => {
+        controller.enqueue(encoder.encode(`: ping\n\n`));
+      };
 
       try {
 
@@ -53,6 +56,7 @@ export async function POST(req: NextRequest) {
       send({ type: "phase", phase: "round1", label: "Round 1 — Position Memos" });
 
       for (const advisor of advisors) {
+        ping();
         send({ type: "advisor_start", phase: "round1", advisor: advisor.slug, name: advisor.name });
 
         const prompt = `${advisor.content}
@@ -92,8 +96,8 @@ Speak in your authentic voice.`;
         let memoText = "";
 
         const aiStream = client.messages.stream({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1500,
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 1100,
           messages: [{ role: "user", content: prompt }],
         });
 
@@ -124,6 +128,7 @@ Speak in your authentic voice.`;
         .join("\n\n---\n\n");
 
       for (const advisor of advisors) {
+        ping();
         send({ type: "advisor_start", phase: "round2", advisor: advisor.slug, name: advisor.name });
 
         const prompt = `${advisor.content}
@@ -165,8 +170,8 @@ Be direct. Name the other advisors when you push back.`}`;
         let rebuttalText = "";
 
         const aiStream = client.messages.stream({
-          model: "claude-sonnet-4-6",
-          max_tokens: 1000,
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 750,
           messages: [{ role: "user", content: prompt }],
         });
 
@@ -226,7 +231,7 @@ Rules:
 - Only use the advisor slugs listed above${mode === "decision" ? "\n- For vote_summary, group slugs by their YES/NO/CONDITIONAL vote from Round 1" : "\n- Set vote_summary to null (advisory session)"}`;
 
         const tensionRes = await client.messages.create({
-          model: "claude-sonnet-4-6",
+          model: "claude-haiku-4-5-20251001",
           max_tokens: 700,
           messages: [{ role: "user", content: tensionPrompt }],
         });
@@ -240,6 +245,7 @@ Rules:
       }
 
       // ── SYNTHESIS ────────────────────────────────────────────────────────
+      ping();
       send({ type: "phase", phase: "synthesis", label: "Chair's Synthesis" });
 
       const synthesisPrompt = `You are the Chair of a personal board of advisors. You do not advocate — you synthesize.
@@ -278,8 +284,8 @@ Write this as a neutral facilitator. Surface the tension; don't flatten it.`}`;
       let synthesisText = "";
 
       const aiStream = client.messages.stream({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1200,
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 900,
         messages: [{ role: "user", content: synthesisPrompt }],
       });
 
