@@ -96,6 +96,150 @@
   }
 }
 
+/* ── Intro overlay ───────────────────────────────────────────────────────── */
+.intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: #10213C;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: opacity 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.intro-overlay.intro-exiting {
+  opacity: 0;
+}
+
+.intro-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+/* Logo */
+.intro-logo {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: intro-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+
+.intro-logo img {
+  height: 40px;
+  width: auto;
+}
+
+@media (min-width: 640px) {
+  .intro-logo img {
+    height: 52px;
+  }
+}
+
+/* Sweep line */
+.intro-line {
+  width: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #D6DE23, transparent);
+  margin: 20px 0 18px;
+  animation: intro-sweep 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.85s both;
+  opacity: 0;
+}
+
+/* VANTAGE wordmark — staggered per letter */
+.intro-wordmark {
+  display: flex;
+  gap: 0.12em;
+  font-family: 'Glacial Indifference', 'Nunito', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(2.8rem, 8vw, 5rem);
+  letter-spacing: 0.22em;
+  color: #D6DE23;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.intro-wordmark span {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.intro-wordmark span:nth-child(1) { animation: intro-letter 0.5s cubic-bezier(0.22, 1, 0.36, 1) 1.05s both; }
+.intro-wordmark span:nth-child(2) { animation: intro-letter 0.5s cubic-bezier(0.22, 1, 0.36, 1) 1.12s both; }
+.intro-wordmark span:nth-child(3) { animation: intro-letter 0.5s cubic-bezier(0.22, 1, 0.36, 1) 1.19s both; }
+.intro-wordmark span:nth-child(4) { animation: intro-letter 0.5s cubic-bezier(0.22, 1, 0.36, 1) 1.26s both; }
+.intro-wordmark span:nth-child(5) { animation: intro-letter 0.5s cubic-bezier(0.22, 1, 0.36, 1) 1.33s both; }
+.intro-wordmark span:nth-child(6) { animation: intro-letter 0.5s cubic-bezier(0.22, 1, 0.36, 1) 1.40s both; }
+.intro-wordmark span:nth-child(7) { animation: intro-letter 0.5s cubic-bezier(0.22, 1, 0.36, 1) 1.47s both; }
+
+/* Tagline */
+.intro-tagline {
+  margin-top: 14px;
+  font-family: 'Glacial Indifference', 'Nunito', system-ui, sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  opacity: 0;
+  animation: intro-rise 0.6s ease-out 2.0s both;
+}
+
+/* Corner accent marks */
+.intro-corner {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  opacity: 0;
+  animation: intro-rise 0.5s ease-out 0.4s both;
+}
+
+.intro-corner-tl {
+  top: 24px;
+  left: 24px;
+  border-top: 1px solid rgba(214, 222, 35, 0.3);
+  border-left: 1px solid rgba(214, 222, 35, 0.3);
+}
+
+.intro-corner-br {
+  bottom: 24px;
+  right: 24px;
+  border-bottom: 1px solid rgba(214, 222, 35, 0.3);
+  border-right: 1px solid rgba(214, 222, 35, 0.3);
+}
+
+/* Keyframes */
+@keyframes intro-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes intro-sweep {
+  from { width: 0; opacity: 0; }
+  to   { width: 220px; opacity: 1; }
+}
+
+@keyframes intro-letter {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Respect reduced motion — skip animation, still show briefly */
+@media (prefers-reduced-motion: reduce) {
+  .intro-logo,
+  .intro-line,
+  .intro-wordmark span,
+  .intro-tagline,
+  .intro-corner {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    width: 220px;
+  }
+}
+
 /* Hide scrollbar for horizontal scroll containers */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

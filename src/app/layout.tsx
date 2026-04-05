@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import BottomNav from "@/components/BottomNav";
+import IntroOverlay from "@/components/IntroOverlay";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -28,6 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={poppins.variable}>
       <body className="min-h-screen bg-galaxy">
+        <IntroOverlay />
         <Navigation />
         <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-20 sm:pb-0">{children}</main>
         <footer className="hidden sm:flex items-center justify-center gap-1.5 py-6 text-xs text-white/20">
