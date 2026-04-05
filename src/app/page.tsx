@@ -26,10 +26,10 @@ export default async function DashboardPage() {
     <div className="space-y-10 animate-fade-in">
       {/* Header */}
       <div className="pt-4">
-        <p className="text-new-leaf text-xs font-sub tracking-widest uppercase mb-2">
-          by ShiftFlow
-        </p>
-        <h1 className="text-3xl font-semibold text-white">Vantage</h1>
+        <h1 className="text-3xl font-semibold text-white">
+          Vantage{" "}
+          <span className="text-white/30 text-xl font-normal">by ShiftFlow</span>
+        </h1>
         <p className="text-white/50 mt-2 max-w-xl">
           Convene your advisory board for strategic decisions. Structured debate,
           honest synthesis, no flattery.
