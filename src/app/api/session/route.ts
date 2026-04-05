@@ -97,7 +97,7 @@ Speak in your authentic voice.`;
 
         const aiStream = client.messages.stream({
           model: "claude-haiku-4-5-20251001",
-          max_tokens: 1100,
+          max_tokens: 800,
           messages: [{ role: "user", content: prompt }],
         });
 
@@ -171,7 +171,7 @@ Be direct. Name the other advisors when you push back.`}`;
 
         const aiStream = client.messages.stream({
           model: "claude-haiku-4-5-20251001",
-          max_tokens: 750,
+          max_tokens: 500,
           messages: [{ role: "user", content: prompt }],
         });
 
@@ -248,44 +248,52 @@ Rules:
       ping();
       send({ type: "phase", phase: "synthesis", label: "Chair's Synthesis" });
 
+      const trim = (text: string) => text.slice(0, 400).trimEnd() + (text.length > 400 ? "…" : "");
+      const round1Digest = advisors
+        .map((a) => `### ${a.name}\n${trim(round1Memos[a.slug] ?? "")}`)
+        .join("\n\n");
+      const round2Digest = advisors
+        .map((a) => `### ${a.name}\n${trim(round2Memos[a.slug] ?? "")}`)
+        .join("\n\n");
+
       const synthesisPrompt = `You are the Chair of a personal board of advisors. You do not advocate — you synthesize.
 
 ## ${mode === "advisory" ? "Topic" : "Question"}
 ${question}
 
 ## Business Context
-${context}${supportingMaterials}
+${context}
 
-## Round 1 ${mode === "advisory" ? "Strategic Reads" : "Memos"}
-${round1Summary}
+## Round 1 ${mode === "advisory" ? "Strategic Reads" : "Memos"} (excerpts)
+${round1Digest}
 
-## Round 2 ${mode === "advisory" ? "Tensions & Pushback" : "Rebuttals"}
-${round2Summary}
+## Round 2 ${mode === "advisory" ? "Tensions & Pushback" : "Rebuttals"} (excerpts)
+${round2Digest}
 
 ## Your Task
 ${mode === "advisory"
-  ? `Write the Chair's Synthesis (600–900 words):
-1. **Strategic Landscape** — 2–3 paragraphs on the terrain the board mapped: core tensions, key variables, things that look like one problem but are actually another.
-2. **Where the Board Agrees** — Shared observations or instincts that cut across advisors.
+  ? `Write the Chair's Synthesis (350–500 words):
+1. **Strategic Landscape** — The core tensions and key variables the board surfaced.
+2. **Where the Board Agrees** — Shared observations that cut across advisors.
 3. **Where the Board Diverges** — The genuine fault lines. Name names.
 4. **The Blind Spot** — What the board collectively underweighted or missed.
-5. **Questions Nick Should Answer Before Deciding** — A numbered list of 5–8 sharp questions that, if answered, would move Nick toward a better decision.
+5. **Questions to Answer** — 3–5 sharp questions that would move toward a decision.
 
-Write this as a neutral facilitator. Surface the tension; don't flatten it.`
-  : `Write the Chair's Synthesis (600–900 words):
-1. **Vote Tracker** — Table showing each advisor's Round 1 vote, Final vote, and whether they changed.
+Write as a neutral facilitator. Surface tension; don't flatten it.`
+  : `Write the Chair's Synthesis (350–500 words):
+1. **Vote Tracker** — Table: advisor | Round 1 vote | Final vote | Changed?
 2. **Where the Board Agrees** — Genuine consensus, not surface agreement.
-3. **Key Tensions** — The 2–3 fault lines that didn't resolve. Be specific about who disagreed and why.
+3. **Key Tensions** — The 2–3 fault lines that didn't resolve. Name names.
 4. **Sharpest Insight** — The single observation that reframes the question.
-5. **Recommended Decision Framework** — Not a decision, but the structure for making one. What conditions need to be true for each path?
+5. **Decision Framework** — What conditions need to be true for each path?
 
-Write this as a neutral facilitator. Surface the tension; don't flatten it.`}`;
+Write as a neutral facilitator. Surface tension; don't flatten it.`}`;
 
       let synthesisText = "";
 
       const aiStream = client.messages.stream({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 900,
+        max_tokens: 1400,
         messages: [{ role: "user", content: synthesisPrompt }],
       });
 
