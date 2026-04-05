@@ -89,7 +89,7 @@ const MODES: Record<Mode, ModeConfig> = {
       section: "About You",
       rolePlaceholder: "e.g. Co-CEO, Founder",
       orgLabel: "Organization",
-      orgPlaceholder: "e.g. ShiftFlow Innovation & Design",
+      orgPlaceholder: "e.g. Acme Corp, your startup name…",
     },
     main: {
       section: "The Business",

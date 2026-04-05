@@ -16,12 +16,18 @@ export default function Navigation() {
   return (
     <nav className="border-b border-white/10 bg-galaxy/95 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
-        <Link href="/" className="flex items-center">
+        <Link href="/" className="flex items-center gap-3">
           <img
             src="/brand/logo/ShiftFlow-Logo-Landscape-FullColour-DarkBackground-2500x930px-72dpi.png"
             alt="ShiftFlow"
             className="h-8 sm:h-[46px] w-auto"
           />
+          <span className="hidden sm:flex items-center gap-3">
+            <span className="w-px h-5 bg-white/20 rounded-full" />
+            <span className="font-sub font-bold tracking-[0.18em] text-sm text-new-leaf uppercase leading-none">
+              Vantage
+            </span>
+          </span>
         </Link>
 
         <div className="hidden sm:flex items-center gap-0.5">

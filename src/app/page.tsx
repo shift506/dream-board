@@ -27,9 +27,9 @@ export default async function DashboardPage() {
       {/* Header */}
       <div className="pt-4">
         <p className="text-new-leaf text-xs font-sub tracking-widest uppercase mb-2">
-          ShiftFlow Innovation & Design
+          by ShiftFlow
         </p>
-        <h1 className="text-3xl font-semibold text-white">Your Dream Board</h1>
+        <h1 className="text-3xl font-semibold text-white">Vantage</h1>
         <p className="text-white/50 mt-2 max-w-xl">
           Convene your advisory board for strategic decisions. Structured debate,
           honest synthesis, no flattery.

@@ -13,8 +13,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Your Dream Board",
-  description: "Advisory board sessions for ShiftFlow Innovation & Design",
+  title: "Vantage by ShiftFlow",
+  description: "AI-powered advisory board sessions. Structured debate, honest synthesis, no flattery.",
   icons: {
     icon: "/brand/logo/ShiftFlow-Logo-Flavicon-NewLeafMidnight.png",
   },
