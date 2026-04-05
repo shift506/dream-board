@@ -9,12 +9,17 @@ import AdvisorCard from "@/components/AdvisorCard";
 import Link from "next/link";
 
 const BOARD_COLORS: Record<string, string> = {
-  "Marketing": "bg-blossom/10 text-blossom border-blossom/25",
-  "Strategy & Direction": "bg-ocean/10 text-ocean border-ocean/25",
+  "Brand & Positioning":    "bg-blossom/10 text-blossom border-blossom/25",
+  "Narrative & Voice":      "bg-ocean/10 text-ocean border-ocean/25",
+  "Growth & Influence":     "bg-new-leaf/10 text-new-leaf border-new-leaf/25",
+  "Strategy & Decisions":   "bg-ocean/10 text-ocean border-ocean/25",
+  "Leadership & Power":     "bg-blossom/10 text-blossom border-blossom/25",
+  "Economics & Capital":    "bg-breeze/10 text-breeze border-breeze/25",
   "Revenue & Business Model": "bg-breeze/10 text-breeze border-breeze/25",
-  "Execution & Momentum": "bg-new-leaf/10 text-new-leaf border-new-leaf/25",
-  "Systems Change": "bg-ocean/10 text-ocean border-ocean/20",
-  "Personal": "bg-blossom/10 text-blossom border-blossom/20",
+  "Systems Change":         "bg-ocean/10 text-ocean border-ocean/20",
+  "Execution & Momentum":   "bg-new-leaf/10 text-new-leaf border-new-leaf/25",
+  "Meaning & Inner Life":   "bg-blossom/10 text-blossom border-blossom/20",
+  "Public & Civic":         "bg-ocean/10 text-ocean border-ocean/20",
 };
 
 const EMPTY_FORM = {
