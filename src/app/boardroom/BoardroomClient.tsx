@@ -35,12 +35,31 @@ interface StreamEvent {
 }
 
 const BOARD_LEFT_BORDER: Record<string, string> = {
-  "Marketing": "border-blossom/60",
-  "Strategy & Direction": "border-ocean/60",
+  "Brand & Positioning":    "border-blossom/60",
+  "Narrative & Voice":      "border-ocean/60",
+  "Growth & Influence":     "border-new-leaf/60",
+  "Strategy & Decisions":   "border-ocean/50",
+  "Leadership & Power":     "border-blossom/50",
+  "Economics & Capital":    "border-breeze/60",
   "Revenue & Business Model": "border-breeze/60",
-  "Execution & Momentum": "border-new-leaf/60",
-  "Systems Change": "border-ocean/50",
-  "Personal": "border-blossom/50",
+  "Systems Change":         "border-ocean/60",
+  "Execution & Momentum":   "border-new-leaf/60",
+  "Meaning & Inner Life":   "border-blossom/50",
+  "Public & Civic":         "border-ocean/50",
+};
+
+const BOARD_TAB_SELECTED: Record<string, string> = {
+  "Brand & Positioning":    "bg-blossom/15 text-blossom",
+  "Narrative & Voice":      "bg-ocean/15 text-ocean",
+  "Growth & Influence":     "bg-new-leaf/15 text-new-leaf",
+  "Strategy & Decisions":   "bg-ocean/15 text-ocean",
+  "Leadership & Power":     "bg-blossom/15 text-blossom",
+  "Economics & Capital":    "bg-breeze/15 text-breeze",
+  "Revenue & Business Model": "bg-breeze/15 text-breeze",
+  "Systems Change":         "bg-ocean/15 text-ocean",
+  "Execution & Momentum":   "bg-new-leaf/15 text-new-leaf",
+  "Meaning & Inner Life":   "bg-blossom/15 text-blossom",
+  "Public & Civic":         "bg-ocean/15 text-ocean",
 };
 
 function extractVote(text: string): Vote | null {
@@ -478,7 +497,7 @@ export default function BoardroomClient({
                 key={b}
                 onClick={() => setFilterBoard(b)}
                 className={`flex-shrink-0 text-xs px-3 py-1.5 rounded-md transition-colors ${
-                  filterBoard === b ? "bg-white/10 text-white" : "text-white/40 hover:text-white/70"
+                  filterBoard === b ? (BOARD_TAB_SELECTED[b] ?? "bg-white/10 text-white") : "text-white/40 hover:text-white/70"
                 }`}
               >
                 {b}
