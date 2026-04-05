@@ -6,6 +6,11 @@ const config: Config = {
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  safelist: [
+    { pattern: /^bg-(blossom|ocean|new-leaf|breeze)\/\d+$/ },
+    { pattern: /^text-(blossom|ocean|new-leaf|breeze)$/ },
+    { pattern: /^border-(blossom|ocean|new-leaf|breeze)\/\d+$/ },
+  ],
   theme: {
     extend: {
       fontFamily: {
